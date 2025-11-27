@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!--DOCTYPE html>
 <html lang="pt">
 <head>
     <meta charset="UTF-8" />
@@ -146,4 +146,14 @@
     </div>
 
 </body>
-</html>
+</html-->
+
+<?= $this->extend('layouts/master') ?>
+
+<?= $this->section('content') ?>
+    <h2>Bem-vindo, <?= esc($user->username) ?>!</h2>
+
+    <div class="card mt-4 p-3" style="background: var(--card-bg);">
+        <p>Esta é a página inicial do painel administrativo.</p>
+    </div>
+<?= $this->endSection() ?>

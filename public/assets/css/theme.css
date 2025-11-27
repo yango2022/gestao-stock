@@ -1,0 +1,62 @@
+/* Tema Claro (default) */
+:root {
+    --bg-color: #f5f7fa;
+    --text-color: #222;
+    --sidebar-bg: #ffffff;
+    --sidebar-text: #333;
+    --header-bg: #ffffff;
+    --header-text: #000;
+    --card-bg: #fff;
+}
+
+/* Tema Escuro */
+[data-theme="dark"] {
+    --bg-color: #1e1e2f;
+    --text-color: #e4e4e4;
+    --sidebar-bg: #141421;
+    --sidebar-text: #ccc;
+    --header-bg: #1b1b2b;
+    --header-text: #fff;
+    --card-bg: #2a2a3d;
+}
+
+/* Tema Automático usando preferências do sistema */
+@media (prefers-color-scheme: dark) {
+    :root[data-theme="auto"] {
+        --bg-color: #1e1e2f;
+        --text-color: #e4e4e4;
+        --sidebar-bg: #141421;
+        --sidebar-text: #ccc;
+        --header-bg: #1b1b2b;
+        --header-text: #fff;
+        --card-bg: #2a2a3d;
+    }
+}
+@media (prefers-color-scheme: light) {
+    :root[data-theme="auto"] {
+        --bg-color: #f5f7fa;
+        --text-color: #222;
+        --sidebar-bg: #ffffff;
+        --sidebar-text: #333;
+        --header-bg: #ffffff;
+        --header-text: #000;
+        --card-bg: #fff;
+    }
+}
+
+/* Estilos gerais */
+body {
+    background: var(--bg-color);
+    color: var(--text-color);
+}
+
+.sidebar {
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    width: 260px;
+}
+
+.header {
+    background: var(--header-bg);
+    color: var(--header-text);
+}
