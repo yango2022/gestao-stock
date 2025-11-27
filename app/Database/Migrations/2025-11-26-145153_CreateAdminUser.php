@@ -14,14 +14,13 @@ class CreateAdminUser extends Migration
         $users = new UserModel();
 
         $user = new User([
-            'username' => 'admin',
-            'email'    => 'admin@sistema.com',
-            'password' => 'admin123', // será hashed automaticamente pelo Shield
+            'username' => 'administrador',
+            'email'    => 'admin@sgsfc.com',
+            'password' => 'admin2244', // será hashed automaticamente pelo Shield
         ]);
 
         // Inserir usuário
         $users->save($user);
-
 
         // Buscar o utilizador salvo
         $user = $users->findById($users->getInsertID());
@@ -33,6 +32,6 @@ class CreateAdminUser extends Migration
     public function down()
     {
         $users = new UserModel();
-        $users->where('email', 'admin@sistema.com')->delete();
+        $users->where('email', 'admin@sgsfc.com')->delete();
     }
 }
