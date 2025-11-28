@@ -1,0 +1,102 @@
+
+body {
+    background: #f5f6fa;
+}
+.sidebar {
+    width: 260px;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    background: #212529;
+    color: #fff;
+    z-index: 100;
+    padding-top: 20px;
+}
+.sidebar a {
+    color: #adb5bd;
+    padding: 12px 20px;
+    display: block;
+    text-decoration: none;
+    font-size: 15px;
+}
+.sidebar a:hover, .sidebar a.active {
+    background: #343a40;
+    color: #fff;
+}
+.content {
+    margin-left: 260px;
+    padding: 20px;
+}
+.topbar {
+    background: #fff;
+    border-radius: 6px;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* BOTÃO FLUTUANTE DO TEMA */
+.theme-toggler {
+    position: relative;
+}
+
+.toggle-btn {
+    background: var(--card-bg);
+    border: none;
+    padding: 10px 12px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    color: var(--text-color);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    transition: 0.2s;
+}
+
+.toggle-btn:hover {
+    transform: scale(1.1);
+}
+
+/* MENU QUE ABRE */
+.theme-options {
+    display: flex;
+    gap: 8px;
+
+    background: var(--card-bg);
+    padding: 8px;
+    border-radius: 50px;
+
+    position: absolute;
+    right: 60px;
+    top: 50%;
+    transform: translateY(-50%);
+
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+
+    opacity: 0;
+    pointer-events: none;
+    transition: 0.25s ease;
+}
+
+.theme-toggler.active .theme-options {
+    opacity: 1;
+    pointer-events: all;
+    right: 70px;
+}
+
+.theme-option {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 50%;
+    transition: 0.2s;
+}
+
+.theme-option:hover {
+    transform: scale(1.2);
+    background: rgba(0,0,0,0.06);
+}
+

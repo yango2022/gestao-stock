@@ -1,62 +1,101 @@
-/* Tema Claro (default) */
+/* ---- Tema Claro ---- */
 :root {
-    --bg-color: #f5f7fa;
-    --text-color: #222;
+    --bg-color: #f7f7f7;
+    --text-color: #333;
     --sidebar-bg: #ffffff;
-    --sidebar-text: #333;
+    --sidebar-text: #444;
     --header-bg: #ffffff;
-    --header-text: #000;
-    --card-bg: #fff;
+    --card-bg: #ffffff;
+    --primary: #0066ff;
+    --shadow: rgba(0, 0, 0, 0.08);
 }
 
-/* Tema Escuro */
-[data-theme="dark"] {
-    --bg-color: #1e1e2f;
-    --text-color: #e4e4e4;
-    --sidebar-bg: #141421;
-    --sidebar-text: #ccc;
-    --header-bg: #1b1b2b;
-    --header-text: #fff;
-    --card-bg: #2a2a3d;
+/* ---- Tema Escuro ---- */
+.dark-theme {
+    --bg-color: #1c1c1c;
+    --text-color: #eee;
+    --sidebar-bg: #141414;
+    --sidebar-text: #ddd;
+    --header-bg: #181818;
+    --card-bg: #222;
+    --primary: #4c8bff;
+    --shadow: rgba(255, 255, 255, 0.05);
 }
 
-/* Tema Automático usando preferências do sistema */
-@media (prefers-color-scheme: dark) {
-    :root[data-theme="auto"] {
-        --bg-color: #1e1e2f;
-        --text-color: #e4e4e4;
-        --sidebar-bg: #141421;
-        --sidebar-text: #ccc;
-        --header-bg: #1b1b2b;
-        --header-text: #fff;
-        --card-bg: #2a2a3d;
-    }
-}
-@media (prefers-color-scheme: light) {
-    :root[data-theme="auto"] {
-        --bg-color: #f5f7fa;
-        --text-color: #222;
-        --sidebar-bg: #ffffff;
-        --sidebar-text: #333;
-        --header-bg: #ffffff;
-        --header-text: #000;
-        --card-bg: #fff;
-    }
-}
-
-/* Estilos gerais */
+/* ---- Estrutura Global ---- */
 body {
+    margin: 0;
     background: var(--bg-color);
     color: var(--text-color);
+    font-family: 'Inter', sans-serif;
+    transition: background .3s, color .3s;
+}
+
+header {
+    background: var(--header-bg);
+    padding: 15px 25px;
+    box-shadow: 0 2px 5px var(--shadow);
 }
 
 .sidebar {
+    width: 250px;
     background: var(--sidebar-bg);
     color: var(--sidebar-text);
-    width: 260px;
+    height: 100vh;
+    position: fixed;
+    padding: 20px 15px;
+    box-shadow: 2px 0 5px var(--shadow);
 }
 
-.header {
-    background: var(--header-bg);
-    color: var(--header-text);
+.sidebar a {
+    display: block;
+    padding: 10px;
+    margin-bottom: 4px;
+    text-decoration: none;
+    color: var(--sidebar-text);
+    border-radius: 6px;
+    transition: .2s;
+}
+
+.sidebar a:hover,
+.sidebar .active {
+    background: var(--primary);
+    color: #fff;
+}
+
+/* Conteúdo principal */
+.content {
+    margin-left: 250px;
+    padding: 30px;
+}
+
+/*** Botão Flutuante ***/
+.theme-button {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    width: 55px;
+    height: 55px;
+    background: var(--primary);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 4px 10px var(--shadow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .3s ease;
+}
+
+.theme-button:hover {
+    transform: scale(1.08);
+}
+
+.theme-button .icon {
+    font-size: 22px;
+    color: white;
+}
+
+/* botão esconder/mostrar */
+.theme-toggle-hidden {
+    transform: translateX(100px);
 }
