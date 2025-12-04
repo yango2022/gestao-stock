@@ -1,22 +1,5 @@
-
 <?= $this->extend('layouts/master') ?>
-
 <?= $this->section('content') ?>
-
-<!-- CONTENT -->
-
-<!-- TOPBAR -->
-<div class="topbar d-flex justify-content-between align-items-center mb-4">
-    <h4>Dashboard</h4>
-
-    <div>
-        <span class="me-3">Olá, <?= esc($user->username) ?></span>
-
-        <a href="/logout" class="btn btn-outline-danger btn-sm">
-            <i class="bi bi-box-arrow-right"></i> Sair
-        </a>
-    </div>
-</div>
 
 <!-- DASHBOARD CARDS -->
 <div class="row g-3">

@@ -26,10 +26,10 @@ class DashboardController extends BaseController
         $user = auth()->user();
 
         // Verificar se pertence ao grupo admin
-        // (Shield: método ->inGroup('admin'))
+        /* (Shield: método ->inGroup('admin'))
         if (!$user->inGroup('admin')) {
             return redirect()->to('/acesso-negado');
-        }
+        } */
 
         // Aqui podes futuramente enviar dados reais ao dashboard
         $data = [
