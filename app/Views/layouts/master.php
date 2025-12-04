@@ -96,6 +96,7 @@
         // -----------------------------
         // EDITAR → ABRIR MODAL
         // -----------------------------
+        
         $(document).on("click", ".editBtn", function () {
 
             let id = $(this).data('id');
@@ -114,7 +115,9 @@
                     $("#edit_id").val(data.user.id);
                     $("#edit_username").val(data.user.username);
                     $("#edit_email").val(data.user.email);
-                   // $("#group").val(data.user.group);
+                    $("#edit_group").val(data.user.group);
+                    $("#edit_password").val(data.user.password);
+                   
 
                     $("#editForm").attr("action", "/admin/users/update/" + data.user.id);
 
@@ -126,7 +129,8 @@
                     Swal.fire("Erro", "Falha ao buscar dados. Código: " + xhr.status, "error");
                 }
             });
-        });
+        }); 
+
 
         // -----------------------------
         // APAGAR COM SWEETALERT

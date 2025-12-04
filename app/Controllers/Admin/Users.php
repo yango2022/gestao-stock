@@ -93,19 +93,6 @@ class Users extends BaseController
         ]);
     }
 
-    //Buscar 1 utilizador
-    public function get2($id)
-    {
-        $user = $this->provider->findById($id);
-
-        return $this->response->setJSON([
-            'status' => 'success',
-            'user'   => $user,
-            'groups' => $user->getGroups(),
-            'permissions' => $user->getPermissions()
-        ]);
-    }
-
     public function get($id)
     {
         $user = $this->users
@@ -128,7 +115,6 @@ class Users extends BaseController
             ]
         ]);
     }
-
 
     // Criar usuário
     public function store()
@@ -164,40 +150,51 @@ class Users extends BaseController
     // Editar usuário
     public function update($id)
     {
-        $data = $this->request->getJSON(true);
+        //$data = $this->request->getJSON(true);
+        $data = $this->request->getPost();
+
+        if (!$data) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'JSON inválido.'
+            ]);
+        }
+
+        // Provider do Shield
+        $users = auth()->getProvider();
 
         $user = $this->provider->findById($id);
 
-        $user->username = $data['username'];
-        $user->email    = $data['email'];
-
-        if (! empty($data['password'])) {
-            $user->password = $data['password'];
+        if (!$user) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Usuário não encontrado.'
+            ]);
         }
 
-        $this->provider->save($user);
+        // Atualizar dados gerais
+        $user->fill([
+            'username' => $data['username'],
+            'email'    => $data['email'],
+            'password'      => $data['password'],
+        ]);
 
-        // Atualizar grupos
-        $this->groups->removeUserFromAllGroups($id);
-        $this->groups->addUserToGroup($id, $data['group']);
 
-        // Atualizar permissões
-        $this->permissions->removeAllPermissionsFromUser($id);
-        if (! empty($data['permissions'])) {
-            foreach ($data['permissions'] as $p) {
-                $this->permissions->addPermissionToUser($id, $p);
-            }
+        // ======================
+        // GRUPOS
+        // ======================
+        $gruposAtuais = $user->getGroups();
+
+        foreach ($gruposAtuais as $g) {
+            $user->removeGroup($g);
         }
 
-        return $this->response->setJSON(['status' => 'success']);
-    }
+        $user->addGroup($data['group']);
 
-    // Apagar usuário
-    public function delete2($id)
-    {
-        $this->provider->delete($id);
+        $users->save($user);
 
-        return $this->response->setJSON(['status' => 'success']);
+        $this->response->setJSON(['status' => 'success']);
+        return redirect()->to('admin/users')->with('success', 'Usuário editado com sucesso!');
     }
 
     /** -------------------------------------------------------------

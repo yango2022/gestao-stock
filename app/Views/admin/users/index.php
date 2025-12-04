@@ -61,9 +61,8 @@
                         </td>
                         <td><?= $u->last_active ?? '-'?></td>
                         <td>
-                            <button class="btn btn-warning btn-sm editBtn"
-                                    data-id="<?= $u->id; ?>">
-                                    <i class="bi bi-pencil"></i>
+                            <button class="btn btn-warning btn-sm editBtn" data-id="<?= $u->id; ?>">
+                                <i class="bi bi-pencil"></i>
                             </button>
 
                             <button class="btn btn-danger btn-sm deleteBtn"
@@ -111,7 +110,7 @@
                     <label>Grupo</label>
                     <select name="group" id="group" class="form-select">
                         <option value="admin">Administrador</option>
-                        <option value="gerente">Gerente</option>
+                        <option value="gestor">Gerente</option>
                         <option value="vendedor">Vendedor</option>
                     </select>
                 </div>
@@ -152,14 +151,19 @@
                 <input type="email" id="edit_email" name="email" class="form-control">
             </div>
 
-            <!--div class="mb-3">
+            <div class="mb-3">
+                <label>Senha</label>
+                <input type="password" id="edit_password" name="password" class="form-control">
+            </div>
+
+            <div class="mb-3">
                 <label>Grupo</label>
-                <select name="group" id="group" class="form-select">
+                <select name="group" id="edit_group" class="form-select">
                     <option value="admin">Administrador</option>
-                    <option value="gerente">Gerente</option>
+                    <option value="gestor">Gerente</option>
                     <option value="vendedor">Vendedor</option>
                 </select>
-            </div-->
+            </div>
 
         </div>
 
