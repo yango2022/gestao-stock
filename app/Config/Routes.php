@@ -23,5 +23,30 @@ $routes->group('admin/users', ['filter' => 'group:admin'], function($routes) {
     $routes->get('delete/(:num)', 'Admin\Users::delete/$1');
 });
 
+$routes->group('produtos', ['filter' => 'group:admin,gestor'], function($routes) {
+    $routes->get('/', 'Admin\ProductsController::index');
+    $routes->get('criar', 'Admin\ProductsController::create');
+    $routes->post('store', 'Admin\ProductsController::store');
+    $routes->get('list', 'Admin\ProductsController::list');
+    $routes->get('get/(:num)', 'Admin\ProductsController::get/$1');
+    $routes->get('editar/(:num)', 'Admin\ProductsController::edit/$1');
+    $routes->post('update/(:num)', 'Admin\ProductsController::update/$1');
+    $routes->get('delete/(:num)', 'Admin\ProductsController::delete/$1');
+});
+
+$routes->group('categorias', ['filter' => 'group:admin,gestor'], function($routes){
+    $routes->get('/', 'CategoryController::index');
+    $routes->post('store', 'CategoryController::store');
+    $routes->get('get/(:num)', 'CategoryController::get/$1');
+    $routes->post('update/(:num)', 'CategoryController::update/$1');
+    $routes->get('delete/(:num)', 'CategoryController::delete/$1');
+});
+
+$routes->group('stock', ['filter' => 'group:admin,gestor'], function($routes){
+    $routes->get('/', 'StockController::index');
+    $routes->post('entrada', 'StockController::entrada');
+    $routes->post('saida', 'StockController::saida');
+});
+
 
 service('auth')->routes($routes);
