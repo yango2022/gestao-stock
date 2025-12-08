@@ -12,6 +12,7 @@ class StockOutModel extends Model
     protected $allowedFields = [
         'product_id',
         'quantity',
+        'user_id',
     ];
 
     protected $useTimestamps = true;

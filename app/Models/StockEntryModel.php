@@ -15,7 +15,7 @@ class StockEntryModel extends Model
         'quantity',
         'unit_cost',
         'total_cost',
-        'note',
+        'user_id',
     ];
 
     protected $useTimestamps = true;

@@ -87,6 +87,7 @@
             <th>Fornecedor</th>
             <th>Qtd</th>
             <th>Preço</th>
+            <th>Usuário</th>
             <th>Data</th>
         </tr>
     </thead>
@@ -97,6 +98,7 @@
             <td><?= $e['supplier_name'] ?? '-' ?></td>
             <td><?= $e['quantity'] ?></td>
             <td><?= $e['unit_cost'] ?></td>
+            <td><?= $e['user_name'] ?? '—' ?></td>
             <td><?= $e['created_at'] ?></td>
         </tr>
         <?php endforeach; ?>
@@ -109,6 +111,7 @@
         <tr>
             <th>Produto</th>
             <th>Qtd</th>
+            <th>Usuário</th>
             <th>Data</th>
         </tr>
     </thead>
@@ -117,6 +120,7 @@
         <tr>
             <td><?= $o['product_name'] ?></td>
             <td><?= $o['quantity'] ?></td>
+            <td><?= $o['user_name'] ?? '—' ?></td>
             <td><?= $o['created_at'] ?></td>
         </tr>
         <?php endforeach; ?>

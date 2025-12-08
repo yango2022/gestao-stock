@@ -24,19 +24,33 @@ class StockController extends BaseController
 
     public function index()
     {
+        // LISTAR ENTRADAS COM O USUÁRIO
         $data['entries'] = $this->entries
-            ->select('stock_entries.*, products.name AS product_name, suppliers.name AS supplier_name')
+            ->select('
+                stock_entries.*, 
+                products.name AS product_name, 
+                suppliers.name AS supplier_name,
+                users.username AS user_name
+            ')
             ->join('products', 'products.id = stock_entries.product_id')
             ->join('suppliers', 'suppliers.id = stock_entries.supplier_id', 'left')
+            ->join('users', 'users.id = stock_entries.user_id', 'left') // 👈 JOIN NO USUÁRIO
             ->orderBy('stock_entries.id', 'DESC')
             ->findAll();
 
+        // LISTAR SAÍDAS COM O USUÁRIO
         $data['outs'] = $this->outs
-            ->select('stock_out.*, products.name AS product_name')
+            ->select('
+                stock_out.*, 
+                products.name AS product_name,
+                users.username AS user_name
+            ')
             ->join('products', 'products.id = stock_out.product_id')
+            ->join('users', 'users.id = stock_out.user_id', 'left') // 👈 JOIN NO USUÁRIO
             ->orderBy('stock_out.id', 'DESC')
             ->findAll();
 
+        // DADOS PARA FORMULÁRIOS
         $data['products']  = $this->products->findAll();
         $data['suppliers'] = $this->suppliers->findAll();
         $data['user'] = auth()->user();
@@ -70,6 +84,7 @@ class StockController extends BaseController
         $entryModel->insert([
             'product_id'  => $data['product_id'],
             'supplier_id' => $data['supplier_id'],
+            'user_id'  => $data['user_id'],
             'quantity'    => $quantity,
             'unit_cost'   => $unit_cost,
             'total_cost'  => $total_cost,

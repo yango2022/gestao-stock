@@ -48,5 +48,10 @@ $routes->group('stock', ['filter' => 'group:admin,gestor'], function($routes){
     $routes->post('saida', 'StockController::saida');
 });
 
+$routes->group('vendas', ['filter' => 'group:admin,gestor,vendedor'], function ($routes) {
+    $routes->get('/', 'SalesController::index');
+    $routes->post('store', 'SalesController::store');
+});
+
 
 service('auth')->routes($routes);
