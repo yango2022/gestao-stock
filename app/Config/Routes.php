@@ -53,5 +53,16 @@ $routes->group('vendas', ['filter' => 'group:admin,gestor,vendedor'], function (
     $routes->post('store', 'SalesController::store');
 });
 
+$routes->group('clientes', ['filter' => 'group:admin,gestor,vendedor'], function($routes){
+
+    $routes->get('/', 'CustomerController::index');
+    $routes->post('store', 'CustomerController::store');
+    $routes->get('get/(:num)', 'CustomerController::get/$1');
+    $routes->post('update/(:num)', 'CustomerController::update/$1');
+    $routes->get('delete/(:num)', 'CustomerController::delete/$1');
+
+});
+
+
 
 service('auth')->routes($routes);

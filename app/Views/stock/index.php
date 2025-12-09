@@ -79,52 +79,71 @@
 
 <hr class="my-4">
 
-<h4>Entradas de Stock</h4>
-<table class="table table-bordered table-striped">
-    <thead>
-        <tr>
-            <th>Produto</th>
-            <th>Fornecedor</th>
-            <th>Qtd</th>
-            <th>Preço</th>
-            <th>Usuário</th>
-            <th>Data</th>
-        </tr>
-    </thead>
-    <tbody>
-        <?php foreach($entries as $e): ?>
-        <tr>
-            <td><?= $e['product_name'] ?></td>
-            <td><?= $e['supplier_name'] ?? '-' ?></td>
-            <td><?= $e['quantity'] ?></td>
-            <td><?= $e['unit_cost'] ?></td>
-            <td><?= $e['user_name'] ?? '—' ?></td>
-            <td><?= $e['created_at'] ?></td>
-        </tr>
-        <?php endforeach; ?>
-    </tbody>
-</table>
+<div class="row">
+    <div class="col">
+        <div class="card border-success box-shadow">
+            <div class="card-header bg-success">
+                <h4>Entradas de Stock</h4>
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Produto</th>
+                            <th>Fornecedor</th>
+                            <th>Qtd</th>
+                            <th>Preço</th>
+                            <th>Usuário</th>
+                            <th>Data</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($entries as $e): ?>
+                        <tr>
+                            <td><?= $e['product_name'] ?></td>
+                            <td><?= $e['supplier_name'] ?? '-' ?></td>
+                            <td><?= $e['quantity'] ?></td>
+                            <td><?= $e['unit_cost'] ?></td>
+                            <td><?= $e['user_name'] ?? '—' ?></td>
+                            <td><?= $e['created_at'] ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
-<h4 class="mt-5">Saídas de Stock</h4>
-<table class="table table-bordered table-striped">
-    <thead>
-        <tr>
-            <th>Produto</th>
-            <th>Qtd</th>
-            <th>Usuário</th>
-            <th>Data</th>
-        </tr>
-    </thead>
-    <tbody>
-        <?php foreach($outs as $o): ?>
-        <tr>
-            <td><?= $o['product_name'] ?></td>
-            <td><?= $o['quantity'] ?></td>
-            <td><?= $o['user_name'] ?? '—' ?></td>
-            <td><?= $o['created_at'] ?></td>
-        </tr>
-        <?php endforeach; ?>
-    </tbody>
-</table>
+    <div class="col">
+        <div class="card border-danger box-shadow">
+            <div class="card-header bg-danger">
+                <h4 class="mt-2">Saídas de Stock</h4>
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Produto</th>
+                            <th>Qtd</th>
+                            <th>Usuário</th>
+                            <th>Data</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($outs as $o): ?>
+                        <tr>
+                            <td><?= $o['product_name'] ?></td>
+                            <td><?= $o['quantity'] ?></td>
+                            <td><?= $o['user_name'] ?? '—' ?></td>
+                            <td><?= $o['created_at'] ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <?= $this->endSection() ?>

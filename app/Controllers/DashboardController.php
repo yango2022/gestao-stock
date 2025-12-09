@@ -3,7 +3,10 @@
 namespace App\Controllers;
 
 use App\Controllers\BaseController;
-use CodeIgniter\Shield\Models\UserModel;
+use App\Models\ProductModel;
+use App\Models\SaleModel;
+use App\Models\SaleItemModel;
+use CodeIgniter\Controller;
 
 class DashboardController extends BaseController
 {
@@ -15,28 +18,160 @@ class DashboardController extends BaseController
     /**
      * Página inicial do sistema após login.
      */
-    public function index()
+    public function index2()
     {
-        // Impede acesso de utilizadores não autenticados
-        if (!auth()->loggedIn()) {
+
+                if (!auth()->loggedIn()) {
             return redirect()->to('/login');
         }
+        $products     = new ProductModel();
+        $sales        = new SaleModel();
+        $saleItems    = new SaleItemModel();
 
-        // Obter utilizador autenticado
         $user = auth()->user();
 
-        // Verificar se pertence ao grupo admin
-        /* (Shield: método ->inGroup('admin'))
-        if (!$user->inGroup('admin')) {
-            return redirect()->to('/acesso-negado');
-        } */
+        // TOTAL DE PRODUTOS
+        $totalProducts = $products->countAllResults();
 
-        // Aqui podes futuramente enviar dados reais ao dashboard
-        $data = [
-            'title' => 'Dashboard',
+        // VENDAS HOJE
+        $today = date('Y-m-d');
+        $salesToday = $sales->where("DATE(created_at)", $today)->countAllResults();
+
+        // RECEITA DO DIA
+        $todayRevenue = $sales->selectSum('total')
+                              ->where("DATE(created_at)", $today)
+                              ->first()['total'] ?? 0;
+
+        // STOCK BAIXO
+        $lowStock = $products->where('current_stock <= min_stock')
+                             ->countAllResults();
+
+        return view('dashboard', [
+            'totalProducts' => $totalProducts,
+            'salesToday'    => $salesToday,
+            'todayRevenue'  => $todayRevenue,
+            'lowStock'      => $lowStock,
             'user'  => $user,
-        ];
+        ]);
+    }
 
-        return view('dashboard', $data);
+    public function index()
+    {
+        $products  = new ProductModel();
+        $sales     = new SaleModel();
+        $saleItems = new SaleItemModel();
+        $user = auth()->user();
+
+        // TOTAL PRODUTOS
+        $totalProducts = $products->countAllResults();
+
+        // VENDAS HOJE
+        $today = date('Y-m-d');
+        $salesToday = $sales->where("DATE(created_at)", $today)->countAllResults();
+
+        // RECEITA DO DIA
+        $todayRevenue = $sales->selectSum('total')
+                              ->where("DATE(created_at)", $today)
+                              ->first()['total'] ?? 0;
+
+        // STOCK BAIXO
+        $lowStock = $products->where('current_stock <= min_stock')->countAllResults();
+
+
+        // ======================
+        // 📊 VENDAS NOS ÚLTIMOS 7 DIAS
+        // ======================
+        $last7days = $sales->select("DATE(created_at) as day, COUNT(*) as total")
+                           ->where("created_at >=", date('Y-m-d', strtotime('-6 days')))
+                           ->groupBy("DATE(created_at)")
+                           ->orderBy("day")
+                           ->findAll();
+
+        $days   = [];
+        $totals = [];
+
+        for ($i = 6; $i >= 0; $i--) {
+            $d = date('Y-m-d', strtotime("-$i days"));
+            $days[] = date('d/m', strtotime($d));
+
+            $found = array_filter($last7days, fn ($x) => $x['day'] === $d);
+            $totals[] = $found ? array_values($found)[0]['total'] : 0;
+        }
+
+
+        // ======================
+        // 📊 TOP 5 PRODUTOS MAIS VENDIDOS
+        // ======================
+        $topProducts = $saleItems->select('products.name, SUM(sale_items.quantity) as qty')
+                                 ->join('products', 'products.id = sale_items.product_id')
+                                 ->groupBy('products.name')
+                                 ->orderBy('qty', 'DESC')
+                                 ->limit(5)
+                                 ->findAll();
+
+        $productNames = array_column($topProducts, 'name');
+        $productQty   = array_column($topProducts, 'qty');
+
+
+        // ==============================
+        // 📊 RECEITA MENSAL (12 MESES)
+        // ==============================
+        $monthlySales = $sales->select("
+                DATE_FORMAT(created_at, '%Y-%m') as month,
+                SUM(total) as revenue
+            ")
+            ->where('created_at >=', date('Y-m-01', strtotime('-11 months')))
+            ->groupBy('month')
+            ->orderBy('month')
+            ->findAll();
+
+        // Preparar arrays para o gráfico
+        $months = [];
+        $revenues = [];
+
+        for ($i = 11; $i >= 0; $i--) {
+            $m = date('Y-m', strtotime("-$i months"));
+            $months[] = date('M/Y', strtotime($m));
+
+            $found = array_filter($monthlySales, fn ($x) => $x['month'] === $m);
+            $revenues[] = $found ? array_values($found)[0]['revenue'] : 0;
+        }
+
+
+        // ==============================
+        // 📊 MOVIMENTOS POR FORMA DE PAGAMENTO
+        // ==============================
+        $paymentStats = $sales->select('payment_method, COUNT(*) as total')
+                            ->groupBy('payment_method')
+                            ->orderBy('total', 'DESC')
+                            ->findAll();
+
+        $payLabels = array_column($paymentStats, 'payment_method');
+        $payValues = array_column($paymentStats, 'total');
+
+
+        return view('dashboard', [
+
+            // cards normais...
+            'totalProducts' => $totalProducts,
+            'salesToday' => $salesToday,
+            'todayRevenue' => $todayRevenue,
+            'lowStock' => $lowStock,
+
+            // gráficos já existentes…
+            'chart_days' => json_encode($days),
+            'chart_totals' => json_encode($totals),
+            'top_names' => json_encode($productNames),
+            'top_qty' => json_encode($productQty),
+
+            // novos gráficos
+            'months'    => json_encode($months),
+            'revenues'  => json_encode($revenues),
+            'pay_labels' => json_encode($payLabels),
+            'pay_values' => json_encode($payValues),
+            'user'  => $user,
+
+        ]);
+
     }
 }
