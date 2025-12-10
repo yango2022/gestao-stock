@@ -7,9 +7,14 @@ use CodeIgniter\Model;
 class SupplierModel extends Model
 {
     protected $table = 'suppliers';
-    protected $allowedFields = [
-        'name', 'email', 'phone', 'address'
-    ];
+    protected $primaryKey = 'id';
 
-    protected $useTimestamps = true;
+    protected $allowedFields = [
+        'name',
+        'email',
+        'phone',
+        'address',
+        'created_at',
+        'updated_at'
+    ];
 }

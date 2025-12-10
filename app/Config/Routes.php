@@ -63,6 +63,15 @@ $routes->group('clientes', ['filter' => 'group:admin,gestor,vendedor'], function
 
 });
 
+$routes->group('fornecedores', ['filter' => 'session'], function($routes){
+    $routes->get('/', 'Suppliers::index');
+    $routes->post('store', 'Suppliers::store');
+    $routes->get('get/(:num)', 'Suppliers::get/$1');
+    $routes->post('update/(:num)', 'Suppliers::update/$1');
+    $routes->get('delete/(:num)', 'Suppliers::delete/$1');
+});
+
+
 
 
 service('auth')->routes($routes);

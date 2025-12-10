@@ -150,6 +150,50 @@ class DashboardController extends BaseController
         $payValues = array_column($paymentStats, 'total');
 
 
+        // ===============================================
+        // 📊 CUSTO VS RECEITA (últimos 12 meses)
+        // ===============================================
+        $db = \Config\Database::connect();
+
+        // Receita mensal (sales)
+        $revenueQuery = $db->query("
+            SELECT DATE_FORMAT(created_at, '%Y-%m') AS month, SUM(total) AS revenue
+            FROM sales
+            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+            GROUP BY month
+        ")->getResultArray();
+
+        // Custo mensal (stock_entries)
+        $costQuery = $db->query("
+            SELECT DATE_FORMAT(created_at, '%Y-%m') AS month, SUM(total_cost) AS cost
+            FROM stock_entries
+            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+            GROUP BY month
+        ")->getResultArray();
+
+        // Meses formatados
+        $months = [];
+        $revenues = [];
+        $costs = [];
+
+        for ($i = 11; $i >= 0; $i--) {
+            $m = date('Y-m', strtotime("-$i months"));
+            $months[] = date('M/Y', strtotime($m));
+
+            // encontrar receita do mês
+            $rev = array_filter($revenueQuery, fn($x) => $x['month'] === $m);
+            $revenues[] = $rev ? array_values($rev)[0]['revenue'] : 0;
+
+            // encontrar custo do mês
+            $ct = array_filter($costQuery, fn($x) => $x['month'] === $m);
+            $costs[] = $ct ? array_values($ct)[0]['cost'] : 0;
+        }
+
+        // enviar para a view
+
+
+
+
         return view('dashboard', [
 
             // cards normais...
@@ -158,20 +202,23 @@ class DashboardController extends BaseController
             'todayRevenue' => $todayRevenue,
             'lowStock' => $lowStock,
 
-            // gráficos já existentes…
             'chart_days' => json_encode($days),
             'chart_totals' => json_encode($totals),
             'top_names' => json_encode($productNames),
             'top_qty' => json_encode($productQty),
 
-            // novos gráficos
+
             'months'    => json_encode($months),
             'revenues'  => json_encode($revenues),
             'pay_labels' => json_encode($payLabels),
             'pay_values' => json_encode($payValues),
             'user'  => $user,
 
-        ]);
+            'cv_months' => json_encode($months),
+            'cv_revenues' => json_encode($revenues),
+            'cv_costs' => json_encode($costs),
 
+        ]);
+ 
     }
 }

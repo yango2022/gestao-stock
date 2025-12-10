@@ -95,6 +95,17 @@
     </div>
 </div>
 
+<div class="row mt-5">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h6 class="mb-3">Custo vs Receita (Últimos 12 Meses)</h6>
+                <canvas id="costVsRevenue"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -161,6 +172,31 @@
                 data: <?= $pay_values ?>,
                 borderWidth: 1
             }]
+        }
+    });
+</script>
+
+<script>
+    const ctxCVR = document.getElementById('costVsRevenue').getContext('2d');
+
+    new Chart(ctxCVR, {
+        type: 'bar',
+        data: {
+            labels: <?= $cv_months ?>,
+            datasets: [
+                {
+                    label: 'Receita (Kz)',
+                    data: <?= $cv_revenues ?>,
+                    borderWidth: 2,
+                    type: 'bar'
+                },
+                {
+                    label: 'Custo (Kz)',
+                    data: <?= $cv_costs ?>,
+                    borderWidth: 3,
+                    type: 'line'
+                }
+            ]
         }
     });
 </script>
