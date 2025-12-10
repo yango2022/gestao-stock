@@ -20,7 +20,7 @@
             <h4>Tabela de Clientes</h4>
         </div>
         <div class="body">
-            <table class="table table-bordered">
+            <table id="myTable" class="table table-striped">
                 <thead>
                     <tr>
                         <th>Nome</th>
@@ -42,13 +42,15 @@
                             <td><?= $c['nif'] ?></td>
                             <td>
                                 <button class="btn btn-sm btn-warning editBtn"
-                                        data-id="<?= $c['id'] ?>">
+                                    data-id="<?= $c['id'] ?>">
+                                    <i class="bi bi-pencil"></i>
                                     Editar
                                 </button>
 
                                 <a href="/clientes/delete/<?= $c['id'] ?>"
                                 onclick="return confirmDelete(event)"
                                 class="btn btn-sm btn-danger">
+                                    <i class="bi bi-trash"></i>
                                     Apagar
                                 </a>
                             </td>

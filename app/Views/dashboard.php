@@ -96,7 +96,7 @@
 </div>
 
 <div class="row mt-5">
-    <div class="col-md-12">
+    <div class="col">
         <div class="card shadow-sm">
             <div class="card-body">
                 <h6 class="mb-3">Custo vs Receita (Últimos 12 Meses)</h6>
@@ -104,6 +104,20 @@
             </div>
         </div>
     </div>
+
+    <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Fluxo de Caixa - Últimos Dias</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="cashFlowChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    
+
+
 </div>
 
 
@@ -197,6 +211,57 @@
                     type: 'line'
                 }
             ]
+        }
+    });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    const ctx = document.getElementById('cashFlowChart').getContext('2d');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: <?= $dias ?>,
+            datasets: [
+                {
+                    label: 'Entradas',
+                    data: <?= $entradas ?>,
+                    borderWidth: 2,
+                    borderColor: 'green',
+                    backgroundColor: 'rgba(0, 255, 0, 0.2)',
+                    tension: 0.3
+                },
+                {
+                    label: 'Saídas',
+                    data: <?= $saidas ?>,
+                    borderWidth: 2,
+                    borderColor: 'red',
+                    backgroundColor: 'rgba(255, 0, 0, 0.2)',
+                    tension: 0.3
+                },
+                {
+                    label: 'Saldo Diário',
+                    data: <?= $saldo ?>,
+                    borderWidth: 2,
+                    borderColor: 'blue',
+                    backgroundColor: 'rgba(0, 0, 255, 0.2)',
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { callback: value => value + ' Kz' }
+                }
+            }
         }
     });
 </script>

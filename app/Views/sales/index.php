@@ -14,7 +14,7 @@
     </div>
     <div class="card-body">
         <!-- LISTA DE VENDAS -->
-        <table class="table table-striped">
+        <table class="table table-striped" id="myTable">
             <thead>
                 <tr>
                     <th>#</th>

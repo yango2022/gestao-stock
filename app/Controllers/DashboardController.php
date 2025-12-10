@@ -15,45 +15,6 @@ class DashboardController extends BaseController
         helper('auth');
     }
 
-    /**
-     * Página inicial do sistema após login.
-     */
-    public function index2()
-    {
-
-                if (!auth()->loggedIn()) {
-            return redirect()->to('/login');
-        }
-        $products     = new ProductModel();
-        $sales        = new SaleModel();
-        $saleItems    = new SaleItemModel();
-
-        $user = auth()->user();
-
-        // TOTAL DE PRODUTOS
-        $totalProducts = $products->countAllResults();
-
-        // VENDAS HOJE
-        $today = date('Y-m-d');
-        $salesToday = $sales->where("DATE(created_at)", $today)->countAllResults();
-
-        // RECEITA DO DIA
-        $todayRevenue = $sales->selectSum('total')
-                              ->where("DATE(created_at)", $today)
-                              ->first()['total'] ?? 0;
-
-        // STOCK BAIXO
-        $lowStock = $products->where('current_stock <= min_stock')
-                             ->countAllResults();
-
-        return view('dashboard', [
-            'totalProducts' => $totalProducts,
-            'salesToday'    => $salesToday,
-            'todayRevenue'  => $todayRevenue,
-            'lowStock'      => $lowStock,
-            'user'  => $user,
-        ]);
-    }
 
     public function index()
     {
@@ -189,10 +150,30 @@ class DashboardController extends BaseController
             $costs[] = $ct ? array_values($ct)[0]['cost'] : 0;
         }
 
-        // enviar para a view
+        
+        // Buscar entradas e saídas por dia
+        $query = $db->query("
+            SELECT 
+                DATE(created_at) AS dia,
+                SUM(CASE WHEN type = 'entrada' THEN amount ELSE 0 END) AS entradas,
+                SUM(CASE WHEN type = 'saida' THEN amount ELSE 0 END) AS saidas
+            FROM cash_flow
+            GROUP BY DATE(created_at)
+            ORDER BY dia ASC
+        ")->getResultArray();
 
+        // Preparar arrays para o gráfico
+        $dias = [];
+        $entradas = [];
+        $saidas = [];
+        $saldo = [];
 
-
+        foreach ($query as $row) {
+            $dias[] = $row['dia'];
+            $entradas[] = (float) $row['entradas'];
+            $saidas[] = (float) $row['saidas'];
+            $saldo[] = (float) $row['entradas'] - (float) $row['saidas'];
+        }
 
         return view('dashboard', [
 
@@ -217,6 +198,11 @@ class DashboardController extends BaseController
             'cv_months' => json_encode($months),
             'cv_revenues' => json_encode($revenues),
             'cv_costs' => json_encode($costs),
+
+            'dias' => json_encode($dias),
+            'entradas' => json_encode($entradas),
+            'saidas' => json_encode($saidas),
+            'saldo' => json_encode($saldo),
 
         ]);
  

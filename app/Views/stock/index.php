@@ -86,7 +86,7 @@
                 <h4>Entradas de Stock</h4>
             </div>
             <div class="card-body">
-                <table class="table table-bordered table-striped">
+                <table class="table table-bordered table-striped" id="myTable">
                     <thead>
                         <tr>
                             <th>Produto</th>
@@ -120,7 +120,7 @@
                 <h4 class="mt-2">Saídas de Stock</h4>
             </div>
             <div class="card-body">
-                <table class="table table-bordered table-striped">
+                <table class="table table-bordered table-striped" id="myTable">
                     <thead>
                         <tr>
                             <th>Produto</th>

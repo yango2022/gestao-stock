@@ -71,6 +71,13 @@ $routes->group('fornecedores', ['filter' => 'session'], function($routes){
     $routes->get('delete/(:num)', 'Suppliers::delete/$1');
 });
 
+$routes->group('fluxo-caixa', function ($routes) {
+    $routes->get('/', 'CashFlowController::index');
+    $routes->post('store', 'CashFlowController::store');
+    $routes->get('edit/(:num)', 'CashFlowController::edit/$1');
+    $routes->post('update/(:num)', 'CashFlowController::update/$1');
+    $routes->get('delete/(:num)', 'CashFlowController::delete/$1');
+});
 
 
 

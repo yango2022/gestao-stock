@@ -13,7 +13,7 @@
     <!-- TABELA -->
     <div class="card shadow-sm">
         <div class="card-body">
-            <table class="table table-bordered table-striped" id="productsTable">
+            <table  class="table table-bordered table-striped" id="myTable">
                 <thead>
                 <tr class="table-dark">
                     <th>ID</th>
@@ -195,7 +195,7 @@
         fetch("/produtos/list")
             .then(r => r.json())
             .then(res => {
-                let tbody = document.querySelector("#productsTable tbody");
+                let tbody = document.querySelector("#myTable tbody");
                 tbody.innerHTML = "";
 
                 res.data.forEach(p => {
