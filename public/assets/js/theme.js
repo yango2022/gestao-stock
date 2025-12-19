@@ -1,91 +1,95 @@
-document.addEventListener("DOMContentLoaded", function () {
+// public/js/color-modes.js
+// Purpose: Controlar dark / light / auto mode usando dropdown Bootstrap 5
+
+(() => {
+    'use strict';
+
+    const STORAGE_KEY = 'bs-theme';
     const html = document.documentElement;
 
-    // Carregar tema salvo
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme) {
-        html.setAttribute("data-theme", savedTheme);
-    } else {
-        html.setAttribute("data-theme", "auto");
-    }
+    const getStoredTheme = () => localStorage.getItem(STORAGE_KEY);
 
-    // Botões
-    const btnLight = document.getElementById("theme-light");
-    const btnDark = document.getElementById("theme-dark");
-    const btnAuto = document.getElementById("theme-auto");
+    const getPreferredTheme = () => {
+        const storedTheme = getStoredTheme();
+        if (storedTheme) return storedTheme;
 
-    btnLight?.addEventListener("click", () => {
-        html.setAttribute("data-theme", "light");
-        localStorage.setItem("theme", "light");
+        return window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'dark'
+            : 'light';
+    };
+
+    const setTheme = (theme) => {
+        if (theme === 'auto') {
+            html.setAttribute(
+                'data-bs-theme',
+                window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+            );
+        } else {
+            html.setAttribute('data-bs-theme', theme);
+        }
+    };
+
+    const showActiveTheme = (theme) => {
+        const themeSwitcher = document.querySelector('#bd-theme');
+        const themeSwitcherText = document.querySelector('#bd-theme-text');
+        const activeThemeIcon = document.querySelector('.theme-icon-active use');
+
+        if (!themeSwitcher) return;
+
+        document
+            .querySelectorAll('[data-bs-theme-value]')
+            .forEach((element) => {
+                element.classList.remove('active');
+                element.setAttribute('aria-pressed', 'false');
+
+                const checkIcon = element.querySelector('.bi.ms-auto');
+                if (checkIcon) checkIcon.classList.add('d-none');
+            });
+
+        const activeButton = document.querySelector(
+            `[data-bs-theme-value="${theme}"]`
+        );
+
+        if (!activeButton) return;
+
+        activeButton.classList.add('active');
+        activeButton.setAttribute('aria-pressed', 'true');
+
+        const activeIcon = activeButton.querySelector('use').getAttribute('href');
+        activeThemeIcon.setAttribute('href', activeIcon);
+
+        const checkIcon = activeButton.querySelector('.bi.ms-auto');
+        if (checkIcon) checkIcon.classList.remove('d-none');
+
+        const label = activeButton.textContent.trim();
+        themeSwitcherText.textContent = label;
+    };
+
+    // Inicialização
+    document.addEventListener('DOMContentLoaded', () => {
+        const storedTheme = getPreferredTheme();
+        setTheme(storedTheme);
+        showActiveTheme(storedTheme);
+
+        document
+            .querySelectorAll('[data-bs-theme-value]')
+            .forEach((toggle) => {
+                toggle.addEventListener('click', () => {
+                    const theme = toggle.getAttribute('data-bs-theme-value');
+                    localStorage.setItem(STORAGE_KEY, theme);
+                    setTheme(theme);
+                    showActiveTheme(theme);
+                });
+            });
     });
 
-    btnDark?.addEventListener("click", () => {
-        html.setAttribute("data-theme", "dark");
-        localStorage.setItem("theme", "dark");
-    });
-
-    btnAuto?.addEventListener("click", () => {
-        html.setAttribute("data-theme", "auto");
-        localStorage.setItem("theme", "auto");
-    });
-});
-
-document.addEventListener("DOMContentLoaded", function () {
-    const html = document.documentElement;
-
-    // Carregar tema salvo
-    const savedTheme = localStorage.getItem("theme");
-    html.setAttribute("data-theme", savedTheme ?? "auto");
-
-    // Botões
-    const btnLight = document.getElementById("theme-light");
-    const btnDark = document.getElementById("theme-dark");
-    const btnAuto = document.getElementById("theme-auto");
-
-    const toggler = document.getElementById("theme-toggler");
-    const toggleBtn = toggler.querySelector(".toggle-btn");
-
-    // Abrir / fechar menu
-    toggleBtn.addEventListener("click", () => {
-        toggler.classList.toggle("active");
-    });
-
-    // Aplicar temas
-    btnLight.addEventListener("click", () => {
-        html.setAttribute("data-theme", "light");
-        localStorage.setItem("theme", "light");
-        toggler.classList.remove("active");
-    });
-
-    btnDark.addEventListener("click", () => {
-        html.setAttribute("data-theme", "dark");
-        localStorage.setItem("theme", "dark");
-        toggler.classList.remove("active");
-    });
-
-    btnAuto.addEventListener("click", () => {
-        html.setAttribute("data-theme", "auto");
-        localStorage.setItem("theme", "auto");
-        toggler.classList.remove("active");
-    });
-});
-
-// Alternar tema claro/escuro
-document.querySelector("#themeBtn").addEventListener("click", () => {
-    document.body.classList.toggle("dark-theme");
-
-    // salvar preferência
-    const isDark = document.body.classList.contains("dark-theme");
-    localStorage.setItem("theme", isDark ? "dark" : "light");
-});
-
-// Carregar tema salvo
-window.addEventListener("DOMContentLoaded", () => {
-    const saved = localStorage.getItem("theme");
-    if (saved === "dark") document.body.classList.add("dark-theme");
-});
-
-// mostrar/esconder botão
-document.querySelector("#toggleVisibility").addEventListener("click", () => {
-    document.querySelector(".theme-button").classList.toggle("theme-toggle-hidden");
-});
+    // Escutar mudanças no SO quando está em "auto"
+    window
+        .matchMedia('(prefers-color-scheme: dark)')
+        .addEventListener('change', () => {
+            const storedTheme = getStoredTheme();
+            if (storedTheme === 'auto') {
+                setTheme('auto');
+            }
+        });
+})();

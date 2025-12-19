@@ -12,7 +12,7 @@ $routes->get('/acesso-negado', function() {
     return view('acesso_negado');
 });
 
-$routes->group('admin/users', ['filter' => 'group:admin'], function($routes) {
+$routes->group('usuarios', ['filter' => 'group:admin'], function($routes) {
     $routes->get('/', 'Admin\Users::index');
     // AJAX
     $routes->post('store', 'Admin\Users::store');

@@ -1,39 +1,60 @@
 <?php
-    use App\Config\Menu;
+use App\Config\Menu;
 
-    $user = auth()->user();
-    $menuItems = Menu::items($user);
+/** @var \CodeIgniter\HTTP\IncomingRequest $request */
+$request = service('request');
+
+$user  = auth()->user();
+$menu  = Menu::items($user);
+$path  = trim($request->getUri()->getPath(), '/');
 ?>
 
-<div class="sidebar">
-    <h4 class="text-center mb-4">Painel Admin</h4>
+<aside class="sidebar border border-right col-md-3 col-lg-2 p-0">
+    
+    <h5 class="text-center mb-4">Painel</h5>
 
+    <ul class="nav flex-column">
 
-    <?php foreach ($menuItems as $item): ?>
+        <?php foreach ($menu as $item): ?>
 
-    <?php if (!empty($item['submenu'])): ?>
+            <?php
+                // verifica se a rota atual começa com a url do menu
+                $isActive = str_starts_with($path, trim($item['url'], '/'));
+            ?>
 
-        <div class="submenu">
-            <div class="submenu-title">
-                <i class="<?= $item['icon'] ?>"></i> <?= $item['label'] ?>
-            </div>
+            <li class="nav-item mb-1">
+                <a href="<?= base_url($item['url']) ?>"
+                   class="nav-link d-flex align-items-center <?= $isActive ? 'active' : '' ?>">
 
-            <div class="submenu-items">
-                <?php foreach ($item['submenu'] as $sub): ?>
-                    <a href="/<?= $sub['url'] ?>"><?= $sub['label'] ?></a>
-                <?php endforeach ?>
-            </div>
-        </div>
+                    <i class="<?= $item['icon'] ?> me-2"></i>
+                    <?= esc($item['label']) ?>
 
-    <?php else: ?>
+                </a>
+            </li>
 
-        <a href="/<?= $item['url'] ?>">
-            <i class="<?= $item['icon'] ?>"></i> <?= $item['label'] ?>
-        </a>
+        <?php endforeach ?>
 
-    <?php endif ?>
+    </ul>
 
-<?php endforeach ?>
-</div>
+    <hr class="my-3" />
 
+    <!-- RODAPÉ / AÇÕES -->
+    <ul class="nav flex-column mb-auto">
+        <li class="nav-item">
+            <a class="nav-link d-flex align-items-center gap-2 text-danger"
+                href="/logout">
+                <i class="bi bi-box-arrow-right"></i>
+                Sair
+            </a>
+        </li>
+    </ul>
 
+</aside>
+
+<style>
+    .nav-link.active {
+        background-color: rgba(40, 76, 235, 0.6);
+        border-radius: 6px;
+        font-weight: 600;
+    }
+</style>

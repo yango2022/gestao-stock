@@ -3,37 +3,35 @@
 
 
 
-    <div class="d-flex justify-content-between mb-3">
-        <h3 class="fw-bold">Gestão de Produtos</h3>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">
-            <i class="bi bi-plus-circle"></i> Novo Produto
-        </button>
+<div class="d-flex justify-content-between mb-3">
+    <h3 class="fw-bold">Gestão de Produtos</h3>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">
+        <i class="bi bi-plus-circle"></i> Novo Produto
+    </button>
+</div>
+
+<!-- TABELA -->
+<div class="card shadow-sm">
+    <div class="card-body">
+        <table  class="table table-bordered table-striped" id="myTable">
+            <thead>
+            <tr class="table-dark">
+                <th>ID</th>
+                <th>Imagem</th>
+                <th>Nome</th>
+                <th>SKU</th>
+                <th>Preço Compra</th>
+                <th>Preço Venda</th>
+                <th>Stock</th>
+                <th>Acções</th>
+            </tr>
+            </thead>
+            <tbody>
+            <!-- AJAX insere aqui -->
+            </tbody>
+        </table>
     </div>
-
-    <!-- TABELA -->
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <table  class="table table-bordered table-striped" id="myTable">
-                <thead>
-                <tr class="table-dark">
-                    <th>ID</th>
-                    <th>Imagem</th>
-                    <th>Nome</th>
-                    <th>SKU</th>
-                    <th>Preço Compra</th>
-                    <th>Preço Venda</th>
-                    <th>Stock</th>
-                    <th>Acções</th>
-                </tr>
-                </thead>
-                <tbody>
-                <!-- AJAX insere aqui -->
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-
+</div>
 
 <!-- ================================
      MODAL: CRIAR PRODUTO
@@ -106,8 +104,6 @@
         </form>
     </div>
 </div>
-
-
 
 <!-- ================================
      MODAL: EDITAR PRODUTO
@@ -182,8 +178,6 @@
         </form>
     </div>
 </div>
-
-
 
 <!-- ================================
      SCRIPT AJAX

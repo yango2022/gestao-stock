@@ -9,16 +9,6 @@
         </button>
     </div>
 
-    <?php if (session()->getFlashdata('success')): ?>
-        <script>
-            Swal.fire({
-                icon: 'success',
-                title: 'Sucesso!',
-                text: '<?= session()->getFlashdata('success'); ?>'
-            });
-        </script>
-    <?php endif; ?>
-
     <!-- TABELA -->
     <div class="card">
         <div class="card-body">

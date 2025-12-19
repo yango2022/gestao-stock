@@ -73,7 +73,7 @@ class Users extends BaseController
             //$this->groups->addGroup($user->id, $data['group']);
         }
 
-        return redirect()->to('admin/users')->with('success', 'Usuário criado com sucesso!');
+        return redirect()->to('usuarios')->with('success', 'Usuário criado com sucesso!');
     }
 
     public function listAjax()
@@ -194,7 +194,7 @@ class Users extends BaseController
         $users->save($user);
 
         $this->response->setJSON(['status' => 'success']);
-        return redirect()->to('admin/users')->with('success', 'Usuário editado com sucesso!');
+        return redirect()->to('usuarios')->with('success', 'Usuário editado com sucesso!');
     }
 
     /** -------------------------------------------------------------
@@ -204,6 +204,6 @@ class Users extends BaseController
     {
         $this->userModel->delete($id);
 
-        return redirect()->to('admin/users')->with('success', 'Usuário eliminado!');
+        return redirect()->to('usuarios')->with('success', 'Usuário eliminado!');
     }
 } 
