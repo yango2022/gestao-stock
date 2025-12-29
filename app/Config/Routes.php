@@ -6,10 +6,28 @@ use CodeIgniter\Router\RouteCollection;
  * @var RouteCollection $routes
  */
 
-$routes->get('/', 'DashboardController::index', ['filter' => 'session']);
+$routes->get('/', 'LandingController::index');
+
 $routes->get('/dashboard', 'DashboardController::index', ['filter' => 'session']);
 $routes->get('/acesso-negado', function() {
     return view('acesso_negado');
+});
+
+$routes->group('', ['filter' => ['auth', 'company']], function ($routes) {
+
+    $routes->get('dashboard', 'DashboardController::index');
+
+    $routes->group('produtos', function ($routes) {
+        $routes->get('/', 'ProductController::index');
+        $routes->post('store', 'ProductController::store');
+    });
+
+    $routes->group('vendas', function ($routes) {
+        $routes->get('/', 'SaleController::index');
+        $routes->post('store', 'SaleController::store');
+    });
+
+    // resto do sistema...
 });
 
 $routes->group('usuarios', ['filter' => 'group:admin'], function($routes) {
@@ -79,6 +97,7 @@ $routes->group('fluxo-caixa', function ($routes) {
     $routes->get('delete/(:num)', 'CashFlowController::delete/$1');
 });
 
-
+$routes->get('register', 'Auth\\RegisterController::index');
+$routes->post('registar', 'CompanyRegisterController::store');
 
 service('auth')->routes($routes);

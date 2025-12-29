@@ -8,6 +8,7 @@ use CodeIgniter\HTTP\IncomingRequest;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
 use Psr\Log\LoggerInterface;
+use App\Models\CompanyModel;
 
 /**
  * Class BaseController
@@ -46,6 +47,9 @@ abstract class BaseController extends Controller
     /**
      * @return void
      */
+
+    protected $company = null;
+    
     public function initController(RequestInterface $request, ResponseInterface $response, LoggerInterface $logger)
     {
         // Do Not Edit This Line
@@ -54,5 +58,19 @@ abstract class BaseController extends Controller
         // Preload any models, libraries, etc, here.
 
         // E.g.: $this->session = service('session');
+
+        // Usuário autenticado
+        $user = auth()->user();
+
+        if ($user && $user->company_id) {
+            $companyModel = new CompanyModel();
+            $this->company = $companyModel->find($user->company_id);
+        } else {
+            $this->company = null;
+        }
+
+        // Disponível em TODAS as views
+        service('renderer')->setVar('company', $this->company);
     }
+    
 }

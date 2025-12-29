@@ -34,6 +34,9 @@ class Filters extends BaseFilters
         'forcehttps'    => ForceHTTPS::class,
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
+        'company'       => \App\Filters\CompanyFilter::class,
+        'group'         => \CodeIgniter\Shield\Filters\GroupFilter::class,
+        'auth'          => \CodeIgniter\Shield\Filters\SessionAuth::class,
     ];
 
     /**
@@ -107,4 +110,5 @@ class Filters extends BaseFilters
      * @var array<string, array<string, list<string>>>
      */
     public array $filters = [];
+    
 }

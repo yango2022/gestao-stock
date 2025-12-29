@@ -4,7 +4,7 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class ProductModel extends Model
+class ProductModel extends BaseTenantModel
 {
     protected $table            = 'products';
     protected $primaryKey       = 'id';
@@ -13,7 +13,7 @@ class ProductModel extends Model
     protected $useTimestamps    = true;
 
     protected $allowedFields = [
-        'name', 'sku', 'category_id', 'cost_price', 'unit_price',
+        'company_id', 'name', 'sku', 'category_id', 'cost_price', 'unit_price',
         'current_stock', 'min_stock', 'image'
     ];
 

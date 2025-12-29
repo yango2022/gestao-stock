@@ -11,7 +11,9 @@ $path  = trim($request->getUri()->getPath(), '/');
 
 <aside class="sidebar border border-right col-md-3 col-lg-2 p-0">
     
-    <h5 class="text-center mb-4">Painel</h5>
+    <h5 class="text-center p-3 mb-0">
+        <?= esc($company->name ?? 'Painel') ?>
+    </h5>
 
     <ul class="nav flex-column">
 

@@ -70,7 +70,7 @@
     <!-- MODAL: CRIAR -->
     <div class="modal fade" id="createModal">
         <div class="modal-dialog">
-            <form action="users/create" method="post" class="modal-content">
+            <form action="usuarios/create" method="post" class="modal-content">
                 <div class="modal-header">
                     <h5>Criar Usuário</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
