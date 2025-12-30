@@ -13,22 +13,6 @@ $routes->get('/acesso-negado', function() {
     return view('acesso_negado');
 });
 
-$routes->group('', ['filter' => ['auth', 'company']], function ($routes) {
-
-    $routes->get('dashboard', 'DashboardController::index');
-
-    $routes->group('produtos', function ($routes) {
-        $routes->get('/', 'ProductController::index');
-        $routes->post('store', 'ProductController::store');
-    });
-
-    $routes->group('vendas', function ($routes) {
-        $routes->get('/', 'SaleController::index');
-        $routes->post('store', 'SaleController::store');
-    });
-
-    // resto do sistema...
-});
 
 $routes->group('usuarios', ['filter' => 'group:admin'], function($routes) {
     $routes->get('/', 'Admin\Users::index');
@@ -36,7 +20,6 @@ $routes->group('usuarios', ['filter' => 'group:admin'], function($routes) {
     $routes->post('store', 'Admin\Users::store');
     $routes->get('list', 'Admin\Users::listAjax');
     $routes->get('get/(:num)', 'Admin\Users::get/$1');
-    $routes->post('create', 'Admin\Users::create');
     $routes->post('update/(:num)', 'Admin\Users::update/$1');
     $routes->get('delete/(:num)', 'Admin\Users::delete/$1');
 });

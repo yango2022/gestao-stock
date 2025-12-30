@@ -4,104 +4,93 @@ namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
 use CodeIgniter\Shield\Entities\User;
-use CodeIgniter\Shield\Models\UserModel;
+
 
 class Users extends BaseController
 {
     protected $provider;
     protected $groups;
     protected $permissions;
-    protected $users;
-    protected $userModel;
+
 
     public function __construct()
     {
         $this->provider     = auth()->getProvider();
         $this->groups       = auth()->getProvider('groups');
         $this->permissions  = auth()->getProvider('permissions');
-        $this->users        = new UserModel();
-        $this->userModel    = new UserModel();
     }
 
-     /** -------------------------------------------------------------
-     * LISTAGEM NORMAL (SEM AJAX)
-     * --------------------------------------------------------------*/
+    /* =====================================================
+     * LISTAGEM DE USUÁRIOS (APENAS DA EMPRESA)
+     * ===================================================== */
     public function index()
     {
-        //Obter utilizador autenticado
-        $user = auth()->user();
-        $users = auth()->getProvider();
-        $usersList = $users
+        $loggedUser = auth()->user();
+
+        $users = $this->provider
+            ->where('company_id', $loggedUser->company_id)
             ->withIdentities()
             ->withGroups()
-            ->withPermissions()
             ->findAll(20);
 
         return view('admin/users/index', [
-            'groups'        => $this->groups->findAll(),
-            'permissions'   => $this->permissions->findAll(),
-            'users'        =>  $usersList,
-            'user'          => $user
+            'users'  => $users,
+            'groups' => $this->groups->findAll(),
+            'user'   => $loggedUser
         ]);
     }
 
-     /** -------------------------------------------------------------
-     * CRIAR USUÁRIO
-     * --------------------------------------------------------------*/
-    public function create()
+    /* =====================================================
+     * CRIAR USUÁRIO (MESMA EMPRESA)
+     * ===================================================== */
+    public function store()
     {
-        $data = [
-            'username'  => $this->request->getPost('username'),
-            'email' => $this->request->getPost('email'),
-            'password' => $this->request->getPost('password'),
-            'group' => $this->request->getPost('group'),
-        ];
+        $loggedUser = auth()->user();
+
+        $data = $this->request->getPost();
 
         $user = new User([
-            'username' => $data['username'],
-            'email'    => $data['email'],
-            'password' => $data['password'],
-            'group'    => $data['group'],
+            'username'   => $data['username'],
+            'email'      => $data['email'],
+            'password'   => $data['password'],
+            'company_id' => $loggedUser->company_id
         ]);
 
         $this->provider->save($user);
-        $user = $this->provider->findById($this->provider->getInsertId());
+
+        $user = $this->provider->findById($this->provider->getInsertID());
 
         // Grupo
         if (! empty($data['group'])) {
             $user->addGroup($data['group']);
-            //$this->groups->addGroup($user->id, $data['group']);
         }
 
-        return redirect()->to('usuarios')->with('success', 'Usuário criado com sucesso!');
+        // Permissões extras
+        if (! empty($data['permissions'])) {
+            foreach ($data['permissions'] as $perm) {
+                $this->permissions->addPermissionToUser($user->id, $perm);
+            }
+        }
+
+        return redirect()->to('usuarios')
+            ->with('success', 'Usuário criado com sucesso!');
     }
 
-    public function listAjax()
-    {
-
-        $users = auth()->getProvider();
-
-        $usersList = $users
-            ->withIdentities()
-            ->withGroups()
-            ->withPermissions()
-            ->findAll(10);
-
-        return $this->response->setJSON([
-            'status' => 'success',
-            'data' => $usersList
-        ]);
-    }
-
+    /* =====================================================
+     * OBTER USUÁRIO (AJAX / MODAL)
+     * ===================================================== */
     public function get($id)
     {
-        $user = $this->users
+        $loggedUser = auth()->user();
+
+        $user = $this->provider
             ->where('id', $id)
+            ->where('company_id', $loggedUser->company_id)
             ->first();
 
-        if (!$user) {
+        if (! $user) {
             return $this->response->setJSON([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => 'Usuário não encontrado'
             ]);
         }
@@ -112,98 +101,99 @@ class Users extends BaseController
                 'id'       => $user->id,
                 'username' => $user->username,
                 'email'    => $user->email,
+                'groups'   => $user->getGroups(),
             ]
         ]);
     }
 
-    // Criar usuário
-    public function store()
-    {
-        $data = $this->request->getJSON(true);
 
-        $user = new User([
-            'username' => $data['username'],
-            'email'    => $data['email'],
-            'password' => $data['password'],
-            'group'    => $data['group'],
-        ]);
-
-        $this->provider->save($user);
-        $user = $this->provider->findById($this->provider->getInsertId());
-
-        // Grupo
-        if (! empty($data['group'])) {
-            $user->addGroup($data['group']);
-            //$this->groups->addGroup($user->id, $data['group']);
-        }
-
-        // Permissões extras
-        if (! empty($data['permissions'])) {
-            foreach ($data['permissions'] as $perm) {
-                $this->permissions->addPermissionToUser($user->id, $perm);
-            }
-        }
-
-        return $this->response->setJSON(['status' => 'success']);
-    }
-
-    // Editar usuário
+    /* =====================================================
+     * ATUALIZAR USUÁRIO (MESMA EMPRESA)
+     * ===================================================== */
     public function update($id)
     {
-        //$data = $this->request->getJSON(true);
-        $data = $this->request->getPost();
+        $loggedUser = auth()->user();
+        $data       = $this->request->getPost();
 
-        if (!$data) {
-            return $this->response->setJSON([
-                'status' => 'error',
-                'message' => 'JSON inválido.'
-            ]);
+        $user = $this->provider
+            ->where('id', $id)
+            ->where('company_id', $loggedUser->company_id)
+            ->first();
+
+        if (! $user) {
+            return redirect()->back()
+                ->with('error', 'Usuário não encontrado ou acesso negado.');
         }
 
-        // Provider do Shield
-        $users = auth()->getProvider();
-
-        $user = $this->provider->findById($id);
-
-        if (!$user) {
-            return $this->response->setJSON([
-                'status' => 'error',
-                'message' => 'Usuário não encontrado.'
-            ]);
-        }
-
-        // Atualizar dados gerais
-        $user->fill([
+        $updateData = [
             'username' => $data['username'],
             'email'    => $data['email'],
-            'password'      => $data['password'],
-        ]);
+        ];
 
-
-        // ======================
-        // GRUPOS
-        // ======================
-        $gruposAtuais = $user->getGroups();
-
-        foreach ($gruposAtuais as $g) {
-            $user->removeGroup($g);
+        if (! empty($data['password'])) {
+            $updateData['password'] = $data['password'];
         }
 
-        $user->addGroup($data['group']);
+        $user->fill($updateData);
+        $this->provider->save($user);
 
-        $users->save($user);
+        // 🔄 Atualizar grupo
+        foreach ($user->getGroups() as $group) {
+            $user->removeGroup($group);
+        }
 
-        $this->response->setJSON(['status' => 'success']);
-        return redirect()->to('usuarios')->with('success', 'Usuário editado com sucesso!');
+        if (! empty($data['group'])) {
+            $user->addGroup($data['group']);
+        }
+
+        return redirect()->to('usuarios')
+            ->with('success', 'Usuário atualizado com sucesso!');
     }
 
-    /** -------------------------------------------------------------
-     * ELIMINAR USUÁRIO
-     * --------------------------------------------------------------*/
+    /* =====================================================
+     * ELIMINAR USUÁRIO (MESMA EMPRESA)
+     * ===================================================== */
     public function delete($id)
     {
-        $this->userModel->delete($id);
+        $loggedUser = auth()->user();
 
-        return redirect()->to('usuarios')->with('success', 'Usuário eliminado!');
+        // Não permitir apagar a si próprio
+        if ($loggedUser->id == $id) {
+            return redirect()->back()
+                ->with('error', 'Não pode eliminar o seu próprio utilizador.');
+        }
+
+        $user = $this->provider
+            ->where('id', $id)
+            ->where('company_id', $loggedUser->company_id)
+            ->first();
+
+        if (! $user) {
+            return redirect()->back()
+                ->with('error', 'Usuário não encontrado ou acesso negado.');
+        }
+
+        $this->provider->delete($user->id);
+
+        return redirect()->to('usuarios')
+            ->with('success', 'Usuário eliminado com sucesso!');
     }
-} 
+
+    /* =====================================================
+     * LISTAGEM AJAX (DATATABLE)
+     * ===================================================== */
+    public function listAjax()
+    {
+        $loggedUser = auth()->user();
+
+        $users = $this->provider
+            ->where('company_id', $loggedUser->company_id)
+            ->withGroups()
+            ->findAll();
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'data'   => $users
+        ]);
+    }
+}

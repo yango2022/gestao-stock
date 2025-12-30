@@ -20,6 +20,7 @@ class ProductsController extends BaseController
 
     public function index()
     {
+        $model = new ProductModel();
         //Obter utilizador autenticado
         $user = auth()->user();
         $users = auth()->getProvider();
@@ -35,19 +36,22 @@ class ProductsController extends BaseController
             'users'         =>  $usersList,
             'user'          => $user,
             'categories'    => $categories,
+            'products'      => $model->findAllByCompany()
         ]);
     }
 
     public function list()
     {
+        $model = new ProductModel();
         return $this->response->setJSON([
-            'data' => $this->product->findAll()
+            'data' => $model->findAllByCompany()
         ]);
     }
 
     public function store()
     {
         $data = $this->request->getPost();
+        $data['company_id'] = auth()->user()->company_id;
 
         $product = new Product($data);
 
@@ -71,27 +75,68 @@ class ProductsController extends BaseController
 
     public function update($id)
     {
+        $companyId = auth()->user()->company_id;
+
+        // 🔒 Buscar produto SOMENTE da empresa do usuário
+        $product = $this->product
+            ->where('id', $id)
+            ->where('company_id', $companyId)
+            ->first();
+
+        if (! $product) {
+            return redirect()->back()->with('error', 'Produto não encontrado.');
+        }
+
         $data = $this->request->getPost();
-        $product = $this->product->find($id);
+
+        // 🔒 Garantir que company_id não seja alterado
+        unset($data['company_id']);
 
         $product->fill($data);
 
-        // Upload
+        // 📷 Upload de imagem
         $img = $this->request->getFile('image');
-        if ($img && $img->isValid()) {
+        if ($img && $img->isValid() && ! $img->hasMoved()) {
+
             $newName = $img->getRandomName();
             $img->move('uploads/produtos', $newName);
+
+            // (Opcional) apagar imagem antiga
+            if (!empty($product->image) && file_exists('uploads/produtos/' . $product->image)) {
+                unlink('uploads/produtos/' . $product->image);
+            }
+
             $product->image = $newName;
         }
 
         $this->product->save($product);
 
-        return redirect()->back()->with('success', 'Produto atualizado!');
+        return redirect()->back()->with('success', 'Produto atualizado com sucesso!');
     }
 
     public function delete($id)
     {
-        $this->product->delete($id);
-        return redirect()->back()->with('success', 'Produto removido!');
+        $companyId = auth()->user()->company_id;
+
+        //Buscar produto apenas da empresa do usuário
+        $product = $this->product
+            ->where('id', $id)
+            ->where('company_id', $companyId)
+            ->first();
+
+        if (! $product) {
+            return redirect()->back()->with('error', 'Produto não encontrado.');
+        }
+
+        //Remover imagem associada (opcional)
+        if (!empty($product->image) && file_exists('uploads/produtos/' . $product->image)) {
+            unlink('uploads/produtos/' . $product->image);
+        }
+
+        //Apagar produto
+        $this->product->delete($product->id);
+
+        return redirect()->back()->with('success', 'Produto removido com sucesso!');
     }
+
 }

@@ -70,7 +70,7 @@
     <!-- MODAL: CRIAR -->
     <div class="modal fade" id="createModal">
         <div class="modal-dialog">
-            <form action="usuarios/create" method="post" class="modal-content">
+            <form action="usuarios/store" method="post" class="modal-content">
                 <div class="modal-header">
                     <h5>Criar Usuário</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -200,7 +200,7 @@
                 permissions: Array.from(document.querySelectorAll('.perm:checked')).map(p => p.value)
             };
 
-            fetch(id ? '/admin/users/update/' + id : '/admin/users/store', {
+            fetch(id ? '/usuarios/update/' + id : '/usuarios/store', {
                 method: "POST",
                 body: JSON.stringify(data)
             })
@@ -226,7 +226,7 @@
             let id = $(this).data('id');
 
             $.ajax({
-                url: "/admin/users/get/" + id,
+                url: "/usuarios/get/" + id,
                 type: "GET",
                 dataType: "json",
                 success: function (data) {
@@ -243,7 +243,7 @@
                     $("#edit_password").val(data.user.password);
                    
 
-                    $("#editForm").attr("action", "/admin/users/update/" + data.user.id);
+                    $("#editForm").attr("action", "/usuarios/update/" + data.user.id);
 
                     let modal = new bootstrap.Modal(document.getElementById("editModal"));
                     modal.show();
@@ -271,7 +271,7 @@
                 cancelButtonText: "Cancelar"
             }).then((result) => {
                 if (result.isConfirmed) {
-                    window.location.href = "users/delete/" + id;
+                    window.location.href = "usuarios/delete/" + id;
                 }
             });
         });
