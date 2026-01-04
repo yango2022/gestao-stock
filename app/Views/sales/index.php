@@ -22,6 +22,7 @@
                     <th>Total</th>
                     <th>Metódo de Pagamento</th>
                     <th>Utilizador</th>
+                    <th>Factura</th>
                     <th>Data</th>
                 </tr>
             </thead>
@@ -33,6 +34,17 @@
                     <td><?= number_format($s['total'], 2) ?> Kz</td>
                     <td><?= $s['payment_method'] ?></td>
                     <td><?= $s['user_name'] ?></td>
+                    <td>
+                        <a href="<?= site_url('invoices/create-from-sale/' . $s['id']) ?>"
+                            class="btn btn-sm btn-primary">
+                            Gerar Fatura
+                        </a>
+                        <a href="<?= site_url('invoices/download/' . $s['id']) ?>"
+                            target="_blank"
+                            class="btn btn-sm btn-danger">
+                            <i class="bi bi-file-earmark-pdf"></i>Baixar PDF
+                        </a>
+                    </td>
                     <td><?= $s['created_at'] ?></td>
                 </tr>
                 <?php endforeach ?>

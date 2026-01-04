@@ -2,54 +2,95 @@
 
 namespace App\Controllers;
 
+use App\Controllers\BaseController;
 use App\Models\SupplierModel;
 
 class Suppliers extends BaseController
 {
-    protected $supplier;
+    protected SupplierModel $supplier;
+    protected int $companyId;
 
     public function __construct()
     {
-        $this->supplier = new SupplierModel();
+        $this->supplier  = new SupplierModel();
+        $this->companyId = auth()->user()->company_id;
     }
 
-    //LISTAR FORNECEDORES
+    /**
+     * LISTAR FORNECEDORES
+     */
     public function index()
     {
-        $data['suppliers'] = $this->supplier->findAll();
-        $data['user'] = auth()->user();
-
-        return view('suppliers/index', $data);
+        return view('suppliers/index', [
+            'suppliers' => $this->supplier
+                ->where('company_id', $this->companyId)
+                ->orderBy('id', 'DESC')
+                ->findAll(),
+            'user' => auth()->user(),
+        ]);
     }
 
-    //SALVAR NOVO FORNECEDOR
+    /**
+     * CRIAR FORNECEDOR
+     */
     public function store()
     {
-        $this->supplier->save([
-            'name'    => $this->request->getPost('name'),
-            'email'   => $this->request->getPost('email'),
-            'phone'   => $this->request->getPost('phone'),
-            'address' => $this->request->getPost('address'),
+        if (! $this->validate([
+            'name'  => 'required|min_length[3]',
+            'email' => 'permit_empty|valid_email',
+            'phone' => 'permit_empty|min_length[6]',
+        ])) {
+            return redirect()->back()->with('error', 'Dados inválidos.');
+        }
+
+        $this->supplier->insert([
+            'company_id' => $this->companyId,
+            'name'       => $this->request->getPost('name'),
+            'email'      => $this->request->getPost('email'),
+            'phone'      => $this->request->getPost('phone'),
+            'address'    => $this->request->getPost('address'),
         ]);
 
         return redirect()->back()->with('success', 'Fornecedor cadastrado com sucesso!');
     }
 
-    //BUSCAR PARA EDIÇÃO (AJAX)
+    /**
+     * BUSCAR FORNECEDOR (AJAX)
+     */
     public function get($id)
     {
-        $supplier = $this->supplier->find($id);
+        $supplier = $this->supplier
+            ->where('id', $id)
+            ->where('company_id', $this->companyId)
+            ->first();
 
-        if (!$supplier) {
-            return $this->response->setJSON(['status' => 'error', 'message' => 'Fornecedor não encontrado']);
+        if (! $supplier) {
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => 'Fornecedor não encontrado.'
+            ])->setStatusCode(404);
         }
 
-        return $this->response->setJSON(['status' => 'success', 'supplier' => $supplier]);
+        return $this->response->setJSON([
+            'status'   => 'success',
+            'supplier' => $supplier
+        ]);
     }
 
-    //ATUALIZAR
+    /**
+     * ATUALIZAR FORNECEDOR
+     */
     public function update($id)
     {
+        $supplier = $this->supplier
+            ->where('id', $id)
+            ->where('company_id', $this->companyId)
+            ->first();
+
+        if (! $supplier) {
+            return redirect()->back()->with('error', 'Fornecedor inválido.');
+        }
+
         $this->supplier->update($id, [
             'name'    => $this->request->getPost('name'),
             'email'   => $this->request->getPost('email'),
@@ -57,13 +98,25 @@ class Suppliers extends BaseController
             'address' => $this->request->getPost('address'),
         ]);
 
-        return redirect()->back()->with('success', 'Fornecedor atualizado!');
+        return redirect()->back()->with('success', 'Fornecedor atualizado com sucesso!');
     }
 
-    //APAGAR
+    /**
+     * REMOVER FORNECEDOR
+     */
     public function delete($id)
     {
+        $supplier = $this->supplier
+            ->where('id', $id)
+            ->where('company_id', $this->companyId)
+            ->first();
+
+        if (! $supplier) {
+            return redirect()->back()->with('error', 'Fornecedor inválido.');
+        }
+
         $this->supplier->delete($id);
+
         return redirect()->back()->with('success', 'Fornecedor removido!');
     }
 }

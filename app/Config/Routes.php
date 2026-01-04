@@ -80,7 +80,19 @@ $routes->group('fluxo-caixa', function ($routes) {
     $routes->get('delete/(:num)', 'CashFlowController::delete/$1');
 });
 
+$routes->group('invoices', ['filter' => 'session'], function ($routes) {
+    $routes->get('/', 'InvoicesController::index');
+    $routes->get('generate/(:num)', 'InvoicesController::generateFromSale/$1');
+    $routes->get('(:num)', 'InvoicesController::show/$1');
+    $routes->post('cancel/(:num)', 'InvoicesController::cancel/$1');
+});
+
 $routes->get('register', 'Auth\\RegisterController::index');
 $routes->post('registar', 'CompanyRegisterController::store');
+
+
+$routes->get('invoices/download/(:num)', 'InvoicesController::download/$1');
+$routes->get('invoices/create-from-sale/(:num)', 'InvoicesController::generateFromSale/$1');
+
 
 service('auth')->routes($routes);

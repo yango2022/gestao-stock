@@ -4,173 +4,163 @@ namespace App\Controllers;
 
 use App\Controllers\BaseController;
 use App\Models\SaleModel;
+use App\Models\SaleItemModel;
 use App\Models\ProductModel;
 use App\Models\CustomerModel;
-use App\Models\SaleItemModel;
-
+use CodeIgniter\Database\Exceptions\DatabaseException;
 
 class SalesController extends BaseController
 {
-    protected $sales;
-    protected $saleItems;
-    protected $user;
-    protected $product;
-    protected $customers;
+    protected SaleModel $sales;
+    protected SaleItemModel $saleItems;
+    protected ProductModel $products;
+    protected CustomerModel $customers;
+
+    protected int $companyId;
+    protected int $userId;
 
     public function __construct()
     {
-        $this->sales = new SaleModel();
+        $this->sales     = new SaleModel();
         $this->saleItems = new SaleItemModel();
-        $this->product = new ProductModel();
+        $this->products  = new ProductModel();
         $this->customers = new CustomerModel();
-        $this->user  = auth()->user();
+
+        $this->companyId = auth()->user()->company_id;
+        $this->userId    = auth()->id();
     }
 
-    // 🔹 LISTAR TODAS AS VENDAS
+    /**
+     * LISTAR VENDAS
+     */
     public function index()
     {
-        $data['sales'] = $this->sales
-            ->select('sales.*, users.username AS user_name')
-            ->join('users', 'users.id = sales.user_id', 'left')
-            ->orderBy('sales.id', 'DESC')
-            ->findAll();
-        $data['user'] = $this->user;
-        $data['user_id'] = auth()->id();
-        $data['products'] = $this->product->findAll();
-        $data['customers'] = $this->customers->findAll();
+        return view('sales/index', [
+            'sales' => $this->sales
+                ->select('sales.*, users.username AS user_name')
+                ->join('users', 'users.id = sales.user_id', 'left')
+                ->where('sales.company_id', $this->companyId)
+                ->orderBy('sales.id', 'DESC')
+                ->findAll(),
 
-        return view('sales/index', $data);
-    }
+            'products'  => $this->products
+                ->where('company_id', $this->companyId)
+                ->findAll(),
 
+            'customers' => $this->customers
+                ->where('company_id', $this->companyId)
+                ->findAll(),
 
-    // 🔹 MOSTRAR FORMULÁRIO
-    public function create()
-    {
-        return view('sales/create');
-    }
+            'user' => auth()->user(),
 
-
-    // 🔹 SALVAR VENDA
-    public function store2()
-    {
-        // validação básica
-        $rules = [
-            'customer_name'  => 'required',
-            'subtotal'       => 'required|numeric',
-            'discount'       => 'permit_empty|numeric',
-            'payment_method' => 'required'
-        ];
-
-        if (! $this->validate($rules)) {
-            return redirect()->back()->with('error', 'Preencha todos os campos obrigatórios!');
-        }
-
-        $subtotal = (float) $this->request->getPost('subtotal');
-        $discount = (float) $this->request->getPost('discount');
-        $total    = $subtotal - $discount;
-
-        $this->sales->save([
-            'user_id'        => auth()->id(),
-            'customer_name'  => $this->request->getPost('customer_name'),
-            'subtotal'       => $subtotal,
-            'discount'       => $discount,
-            'total'          => $total,
-            'payment_method' => $this->request->getPost('payment_method'),
-            'created_at'     => date('Y-m-d H:i:s'),
+            'user_id' => $this->userId,
         ]);
-
-        return redirect()->to('/vendas')->with('success', 'Venda registada com sucesso!');
     }
 
+    /**
+     * REGISTAR VENDA (AJAX)
+     */
     public function store()
     {
-        // Receber JSON
         $data = $this->request->getJSON(true);
 
-        if (!$data) {
+        if (
+            empty($data['items']) ||
+            empty($data['payment_method'])
+        ) {
             return $this->response->setJSON([
                 'status'  => 'error',
-                'message' => 'Dados inválidos.'
+                'message' => 'Dados incompletos.'
+            ])->setStatusCode(400);
+        }
+
+        $db = db_connect();
+        $db->transStart();
+
+        try {
+            // 🔹 Cálculos
+            $subtotal = 0;
+            foreach ($data['items'] as $item) {
+                $subtotal += (float)$item['total'];
+            }
+
+            $discount = isset($data['discount']) ? (float)$data['discount'] : 0;
+            $total    = max(0, $subtotal - $discount);
+
+            // 🔹 Criar venda
+            $saleId = $this->sales->insert([
+                'company_id'     => $this->companyId,
+                'user_id'        => $this->userId,
+                'customer_id'    => $data['customer_id'] ?? null,
+                'customer_name'  => $data['customer_name'] ?? null,
+                'subtotal'       => $subtotal,
+                'discount'       => $discount,
+                'total'          => $total,
+                'payment_method' => $data['payment_method'],
+                'status'         => 'paid',
+                'created_at'     => date('Y-m-d H:i:s'),
             ]);
-        }
 
-        // Validação
-        if (empty($data['customer_name']) || empty($data['payment_method']) || empty($data['items'])) {
-            return $this->response->setJSON([
-                'status'  => 'error',
-                'message' => 'Preencha todos os campos obrigatórios.'
-            ]);
-        }
+            // 🔹 Itens + Stock
+            foreach ($data['items'] as $item) {
+                $product = $this->products
+                    ->where('id', $item['product_id'])
+                    ->where('company_id', $this->companyId)
+                    ->first();
 
-        // Cálculos
-        $subtotal = 0;
-        foreach ($data['items'] as $item) {
-            $subtotal += (float)$item['total'];
-        }
+                if (! $product || $product->current_stock < $item['quantity']) {
+                    throw new DatabaseException('Stock insuficiente.');
+                }
 
-        $discount = isset($data['discount']) ? (float)$data['discount'] : 0;
-        $total    = $subtotal - $discount;
-        if ($total < 0) $total = 0;
+                // Item da venda
+                $this->saleItems->insert([
+                    'sale_id'    => $saleId,
+                    'product_id' => $product->id,
+                    'unit_price' => $item['unit_price'],
+                    'quantity'   => $item['quantity'],
+                    'total'      => $item['total'],
+                ]);
 
-        // Salvar venda
-        $saleId = $this->sales->insert([
-            'user_id'        => $data['user_id'],
-            'customer_name'    => $data['customer_name'],
-            'subtotal'       => $subtotal,
-            'discount'       => $discount,
-            'total'          => $total,
-            'payment_method' => $data['payment_method'],
-            'created_at'     => date('Y-m-d H:i:s'),
-        ]);
-
-        // Salvar itens
-        foreach ($data['items'] as $item) {
-            $this->saleItems->insert([
-                'sale_id'    => $saleId,
-                'product_id' => $item['product_id'],
-                'unit_price'      => $item['unit_price'],
-                'quantity'   => $item['quantity'],
-                'total'      => $item['total'],
-            ]);
-        }
-
-        // 🔹 Atualizar stock após a venda
-        foreach ($data['items'] as $item) {
-            $product = $this->product->find($item['product_id']);
-            if ($product) {
-                $newStock = $product->current_stock - intval($item['quantity']);
-                if ($newStock < 0) $newStock = 0;
-
-                $this->product->update($item['product_id'], [
-                    'current_stock' => $newStock
+                // Atualizar stock
+                $this->products->update($product->id, [
+                    'current_stock' => $product->current_stock - $item['quantity']
                 ]);
             }
+
+            $db->transComplete();
+
+            return $this->response->setJSON([
+                'status'  => 'success',
+                'message' => 'Venda registada com sucesso!',
+                'sale_id' => $saleId
+            ]);
+
+        } catch (\Throwable $e) {
+            $db->transRollback();
+
+            return $this->response->setJSON([
+                'status'  => 'error',
+                'message' => $e->getMessage()
+            ])->setStatusCode(500);
         }
-
-        return $this->response->setJSON([
-            'status'  => 'success',
-            'message' => 'Venda registada com sucesso!',
-            'sale_id' => $saleId
-        ]);
-
-
-        return $this->response->setJSON([
-            'status'  => 'success',
-            'message' => 'Venda registada com sucesso!',
-            'sale_id' => $saleId
-        ]);
     }
 
-
-    // 🔹 APAGAR VENDA
+    /**
+     * REMOVER VENDA
+     */
     public function delete($id)
     {
-        if (! $this->sales->find($id)) {
-            return redirect()->back()->with('error', 'Venda não encontrada!');
+        $sale = $this->sales
+            ->where('id', $id)
+            ->where('company_id', $this->companyId)
+            ->first();
+
+        if (! $sale) {
+            return redirect()->back()->with('error', 'Venda inválida.');
         }
 
         $this->sales->delete($id);
 
-        return redirect()->back()->with('success', 'Venda eliminada!');
+        return redirect()->back()->with('success', 'Venda removida!');
     }
 }

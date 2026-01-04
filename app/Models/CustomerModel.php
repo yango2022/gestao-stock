@@ -10,7 +10,7 @@ class CustomerModel extends Model
     protected $primaryKey = 'id';
 
     protected $allowedFields = [
-        'name', 'email', 'phone', 'address', 'city', 'nif'
+       'company_id', 'name', 'email', 'phone', 'address', 'city', 'nif'
     ];
 
     protected $useTimestamps = true;

@@ -10,6 +10,7 @@ class SupplierModel extends Model
     protected $primaryKey = 'id';
 
     protected $allowedFields = [
+        'company_id',
         'name',
         'email',
         'phone',

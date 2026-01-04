@@ -11,6 +11,7 @@ class CategoryModel extends Model
     protected $returnType = 'array';       // retorna os registros como array
     protected $useSoftDeletes = true;      // opcional: se quiser soft delete
     protected $allowedFields = [
+        'company_id',
         'name',
         'description',
         'created_at',

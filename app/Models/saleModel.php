@@ -11,6 +11,7 @@ class SaleModel extends Model
     protected $returnType       = 'array';
 
     protected $allowedFields    = [
+        'company_id',
         'user_id',
         'customer_name',
         'subtotal',

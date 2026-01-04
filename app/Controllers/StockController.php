@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Controllers\BaseController;
 use App\Models\ProductModel;
 use App\Models\StockEntryModel;
 use App\Models\StockOutModel;
@@ -9,10 +10,13 @@ use App\Models\SupplierModel;
 
 class StockController extends BaseController
 {
-    protected $products;
-    protected $entries;
-    protected $outs;
-    protected $suppliers;
+    protected ProductModel $products;
+    protected StockEntryModel $entries;
+    protected StockOutModel $outs;
+    protected SupplierModel $suppliers;
+
+    protected int $companyId;
+    protected int $userId;
 
     public function __construct()
     {
@@ -20,104 +24,143 @@ class StockController extends BaseController
         $this->entries   = new StockEntryModel();
         $this->outs      = new StockOutModel();
         $this->suppliers = new SupplierModel();
+
+        $this->companyId = auth()->user()->company_id;
+        $this->userId    = auth()->id();
     }
 
+    /**
+     * DASHBOARD DE STOCK
+     */
     public function index()
     {
-        // LISTAR ENTRADAS COM O USUÁRIO
-        $data['entries'] = $this->entries
+        // ENTRADAS
+        $entries = $this->entries
             ->select('
-                stock_entries.*, 
-                products.name AS product_name, 
-                suppliers.name AS supplier_name,
-                users.username AS user_name
+                stock_entries.*,
+                products.name   AS product_name,
+                suppliers.name  AS supplier_name,
+                users.username  AS user_name
             ')
             ->join('products', 'products.id = stock_entries.product_id')
             ->join('suppliers', 'suppliers.id = stock_entries.supplier_id', 'left')
-            ->join('users', 'users.id = stock_entries.user_id', 'left') // 👈 JOIN NO USUÁRIO
+            ->join('users', 'users.id = stock_entries.user_id', 'left')
+            ->where('stock_entries.company_id', $this->companyId)
             ->orderBy('stock_entries.id', 'DESC')
             ->findAll();
 
-        // LISTAR SAÍDAS COM O USUÁRIO
-        $data['outs'] = $this->outs
+        // SAÍDAS
+        $outs = $this->outs
             ->select('
-                stock_out.*, 
+                stock_out.*,
                 products.name AS product_name,
                 users.username AS user_name
             ')
             ->join('products', 'products.id = stock_out.product_id')
-            ->join('users', 'users.id = stock_out.user_id', 'left') // 👈 JOIN NO USUÁRIO
+            ->join('users', 'users.id = stock_out.user_id', 'left')
+            ->where('stock_out.company_id', $this->companyId)
             ->orderBy('stock_out.id', 'DESC')
             ->findAll();
 
-        // DADOS PARA FORMULÁRIOS
-        $data['products']  = $this->products->findAll();
-        $data['suppliers'] = $this->suppliers->findAll();
-        $data['user'] = auth()->user();
-        $data['user_id'] = auth()->id();
-
-        return view('stock/index', $data);
+        return view('stock/index', [
+            'entries'   => $entries,
+            'outs'      => $outs,
+            'products'  => $this->products->where('company_id', $this->companyId)->findAll(),
+            'suppliers' => $this->suppliers->where('company_id', $this->companyId)->findAll(),
+            'user'      => auth()->user(),
+            'user_id'   => $this->userId,
+        ]);
     }
 
+    /**
+     * ENTRADA DE STOCK
+     */
     public function entrada()
     {
         $data = $this->request->getPost();
 
-        // Validação básica
-        if (!$this->validate([
-            'product_id'  => 'required',
-            'supplier_id' => 'trim',
-            'quantity'    => 'required|numeric',
-            'unit_cost'   => 'required|numeric'
+        if (! $this->validate([
+            'product_id'  => 'required|integer',
+            'quantity'    => 'required|numeric|greater_than[0]',
+            'unit_cost'   => 'required|numeric|greater_than[0]',
         ])) {
-            return redirect()->back()->with('error', 'Preencha todos os campos!');
+            return redirect()->back()->with('error', 'Dados inválidos.');
         }
 
-        $quantity  = (float) $data['quantity'];
-        $unit_cost = (float) $data['unit_cost'];
-        $total_cost = $quantity * $unit_cost;
+        // Produto da mesma empresa
+        $product = $this->products
+            ->where('id', $data['product_id'])
+            ->where('company_id', $this->companyId)
+            ->first();
 
-        $entryModel = new \App\Models\StockEntryModel();
-        $productModel = new \App\Models\ProductModel();
+        if (! $product) {
+            return redirect()->back()->with('error', 'Produto inválido.');
+        }
 
-        // Salvar entrada
-        $entryModel->insert([
-            'product_id'  => $data['product_id'],
-            'supplier_id' => $data['supplier_id'],
-            'user_id'  => $data['user_id'],
+        $quantity   = (float) $data['quantity'];
+        $unitCost   = (float) $data['unit_cost'];
+        $totalCost  = $quantity * $unitCost;
+
+        // REGISTAR ENTRADA
+        $this->entries->insert([
+            'company_id'  => $this->companyId,
+            'product_id'  => $product->id,
+            'supplier_id' => $data['supplier_id'] ?? null,
+            'user_id'     => $this->userId,
             'quantity'    => $quantity,
-            'unit_cost'   => $unit_cost,
-            'total_cost'  => $total_cost,
+            'unit_cost'   => $unitCost,
+            'total_cost'  => $totalCost,
         ]);
 
-        // Atualizar stock no produto
-        $product = $productModel->find($data['product_id']);
-        $newStock = $product->current_stock + $quantity;
-
-        $productModel->update($data['product_id'], [
-            'current_stock' => $newStock,
-            'cost_price'    => $unit_cost, // opcional, dependendo da tua regra
+        // ATUALIZAR STOCK DO PRODUTO
+        $this->products->update($product->id, [
+            'current_stock' => $product->current_stock + $quantity,
+            'cost_price'    => $unitCost,
         ]);
 
         return redirect()->back()->with('success', 'Entrada registada com sucesso!');
     }
 
+    /**
+     * SAÍDA DE STOCK
+     */
     public function saida()
     {
-        $post = $this->request->getPost();
+        $data = $this->request->getPost();
 
-        $product = $this->products->find($post['product_id']);
-
-        if ($product->current_stock < $post['quantity']) {
-            return redirect()->back()->with('error', 'Stock insuficiente!');
+        if (! $this->validate([
+            'product_id' => 'required|integer',
+            'quantity'   => 'required|numeric|greater_than[0]',
+        ])) {
+            return redirect()->back()->with('error', 'Dados inválidos.');
         }
 
-        $this->outs->save($post);
+        $product = $this->products
+            ->where('id', $data['product_id'])
+            ->where('company_id', $this->companyId)
+            ->first();
 
-        $this->products->update($product->id, [
-            'current_stock' => $product->current_stock - $post['quantity']
+        if (! $product) {
+            return redirect()->back()->with('error', 'Produto inválido.');
+        }
+
+        if ($product->current_stock < $data['quantity']) {
+            return redirect()->back()->with('error', 'Stock insuficiente.');
+        }
+
+        // REGISTAR SAÍDA
+        $this->outs->insert([
+            'company_id' => $this->companyId,
+            'product_id' => $product->id,
+            'user_id'    => $this->userId,
+            'quantity'   => $data['quantity'],
         ]);
 
-        return redirect()->back()->with('success', 'Saída registada!');
+        // ATUALIZAR STOCK
+        $this->products->update($product->id, [
+            'current_stock' => $product->current_stock - $data['quantity'],
+        ]);
+
+        return redirect()->back()->with('success', 'Saída registada com sucesso!');
     }
 }
