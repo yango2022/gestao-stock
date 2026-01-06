@@ -28,7 +28,7 @@
                         </div>
                     <?php endif ?>
 
-                    <form method="post" action="<?= site_url('registar') ?>">
+                    <form method="post" action="<?= site_url('registar') ?>" enctype="multipart/form-data">
                         <?= csrf_field() ?>
 
                         <h6 class="text-muted mb-2">Dados da Empresa</h6>
