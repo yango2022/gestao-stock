@@ -87,12 +87,28 @@ class SalesController extends BaseController
             $discount = isset($data['discount']) ? (float)$data['discount'] : 0;
             $total    = max(0, $subtotal - $discount);
 
+
+            // 1️⃣ Validar cliente
+            if (empty($data['customer_id'])) {
+                return redirect()->back()->with('error', 'Cliente inválido.');
+            }
+
+             $customer = $this->customers->find($data['customer_id']);
+
+            if (! $customer) {
+                return redirect()->back()->with('error', 'Cliente não encontrado.');
+            }
+
             // 🔹 Criar venda
             $saleId = $this->sales->insert([
                 'company_id'     => $this->companyId,
                 'user_id'        => $this->userId,
-                'customer_id'    => $data['customer_id'] ?? null,
-                'customer_name'  => $data['customer_name'] ?? null,
+                'customer_id'    => $customer['id'] ?? null,
+                'customer_name'  => $customer['name'] ?? null,
+                'customer_nif'    => $customer['nif'] ?? null,
+                'customer_phone'  => $customer['phone'] ?? null,
+                'customer_email'  => $customer['email'] ?? null,
+                'customer_address'  => $customer['address'] ?? null,
                 'subtotal'       => $subtotal,
                 'discount'       => $discount,
                 'total'          => $total,

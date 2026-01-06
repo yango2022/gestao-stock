@@ -71,7 +71,7 @@
                     <label>Cliente</label>
                     <select id="customer_id" class="form-select">
                         <?php foreach($customers as $c): ?>
-                        <option value="<?= $c['name'] ?>"><?= $c['name'] ?></option>
+                        <option value="<?= $c['id'] ?>"><?= $c['name'] ?></option>
                         <?php endforeach ?>
                     </select>
                 </div>
@@ -210,7 +210,7 @@
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                customer_name: document.getElementById('customer_id').value,
+                customer_id: document.getElementById('customer_id').value,
                 user_id: document.getElementById('user_id').value,
                 payment_method: document.getElementById('payment_method').value,
                 discount: document.getElementById('discount').value,

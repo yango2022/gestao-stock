@@ -111,7 +111,7 @@ class CompanyRegisterController extends BaseController
             'username'   => $this->request->getPost('username'),
             'email'      => $this->request->getPost('email'),
             'password'   => $this->request->getPost('password'),
-            'company_id' => $companyId, // ✅ AGORA FUNCIONA
+            'company_id' => $companyId,
         ]);
 
         $users->save($user);

@@ -19,7 +19,7 @@
         <div class="card-header">
             <h4>Tabela de Clientes</h4>
         </div>
-        <div class="body">
+        <div class="card-body">
             <table id="myTable" class="table table-striped">
                 <thead>
                     <tr>
@@ -38,8 +38,8 @@
                             <td><?= $c['name'] ?></td>
                             <td><?= $c['email'] ?></td>
                             <td><?= $c['phone'] ?></td>
-                            <td><?= $c['city'] ?></td>
                             <td><?= $c['nif'] ?></td>
+                            <td><?= $c['city'] ?></td>
                             <td>
                                 <button class="btn btn-sm btn-warning editBtn"
                                     data-id="<?= $c['id'] ?>">

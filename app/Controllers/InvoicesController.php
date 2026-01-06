@@ -8,6 +8,7 @@ use App\Models\InvoiceItemModel;
 use App\Models\InvoiceSequenceModel;
 use App\Models\SaleModel;
 use App\Models\SaleItemModel;
+use App\Models\CompanyModel;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 
@@ -20,6 +21,7 @@ class InvoicesController extends BaseController
     protected $saleItems;
     protected $user;
     protected $companyId;
+    protected $companies;
 
     public function __construct()
     {
@@ -28,6 +30,7 @@ class InvoicesController extends BaseController
         $this->sequence     = new InvoiceSequenceModel();
         $this->sales        = new SaleModel();
         $this->saleItems    = new SaleItemModel();
+        $this->companies     = new CompanyModel();
 
         $this->user      = auth()->user();
         $this->companyId = $this->user->company_id;
@@ -70,20 +73,44 @@ class InvoicesController extends BaseController
         //Número da fatura
         $invoiceNumber = $this->sequence->nextNumber($this->companyId);
 
+        $company = $this->companies
+            ->where('id', $this->companyId)
+            ->first();
+
+        if (! $company) {
+            return redirect()->back()->with('error', 'Empresa não encontrada.');
+        }
+
         //Criar fatura
         $invoiceId = $this->invoice->insert([
-            'company_id'     => $this->companyId,
-            'sale_id'        => $sale['id'],
-            'invoice_number' => $invoiceNumber,
-            'invoice_type'   => 'FT',
-            'customer_name'  => $sale['customer_name'],
-            'subtotal'       => $sale['subtotal'],
-            'discount'       => $sale['discount'] ?? 0,
-            'tax'            => 0,
-            'total'          => $sale['total'],
-            'status'         => 'emitida',
-            'issued_at'      => date('Y-m-d H:i:s'),
+            'company_id'       => $this->companyId,
+            'sale_id'          => $sale['id'],
+            'invoice_number'   => $invoiceNumber,
+            'invoice_type'     => 'FT',
+
+            // ✅ DADOS DA EMPRESA (FIXOS NA FATURA)
+            'company_name'     => $company['name'],
+            'company_nif'      => $company['nif'],
+            'company_address'  => $company['address'],
+            'company_email'    => $company['email'] ?? null,
+
+            // CLIENTE
+            'customer_name'    => $sale['customer_name'],
+            'customer_nif'    => $sale['customer_nif'],
+            'customer_phone'  => $sale['customer_phone'],
+            'customer_email'  => $sale['customer_email'],
+            'customer_address'  => $sale['customer_address'],
+
+            // VALORES
+            'subtotal'         => $sale['subtotal'],
+            'discount'         => $sale['discount'] ?? 0,
+            'tax'              => 0,
+            'total'            => $sale['total'],
+
+            'status'           => 'emitida',
+            'issued_at'        => date('Y-m-d H:i:s'),
         ]);
+
 
         //Itens
         $items = $this->saleItems
@@ -170,31 +197,6 @@ class InvoicesController extends BaseController
             'items'   => $items
         ]);
     }
-
-    public function show(int $id)
-    {
-        $invoice = $this->invoice
-            ->select('invoices.*, companies.name AS company_name, companies.nif AS company_nif, companies.address AS company_address, companies.email AS company_email')
-            ->join('companies', 'companies.id = invoices.company_id')
-            ->where('invoices.id', $id)
-            ->where('invoices.company_id', $this->companyId)
-            ->first();
-
-        if (!$invoice) {
-            return redirect()->back()->with('error', 'Fatura não encontrada.');
-        }
-
-        $items = $this->invoiceItems
-            ->where('invoice_id', $invoice['id'])
-            ->findAll();
-
-        return view('invoices/show', [
-            'invoice' => (object) $invoice,
-            'items'   => $items,
-        ]);
-    }
- 
-
 
     //CANCELAR / ANULAR FATURA
     public function cancel(int $id)

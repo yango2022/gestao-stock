@@ -16,6 +16,9 @@ class InvoiceModel extends Model
         'invoice_type',
         'customer_name',
         'customer_nif',
+        'customer_phone',
+        'customer_email',
+        'customer_address',
         'subtotal',
         'discount',
         'tax',
@@ -25,6 +28,10 @@ class InvoiceModel extends Model
         'created_at',
         'updated_at',
         'pdf_path',
+        'company_name',
+        'company_nif',
+        'company_address',
+        'company_email',
     ];
 
     protected $useTimestamps = true;

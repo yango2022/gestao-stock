@@ -8,6 +8,6 @@ class CompanyModel extends Model
 {
     protected $table = 'companies';
     protected $allowedFields = [
-        'name', 'slug', 'email', 'status'
+        'name', 'slug', 'email', 'phone', 'nif', 'address', 'status'
     ];
 }

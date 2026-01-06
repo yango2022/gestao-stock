@@ -88,7 +88,7 @@ $routes->group('invoices', ['filter' => 'session'], function ($routes) {
 });
 
 $routes->get('register', 'Auth\\RegisterController::index');
-$routes->post('registar', 'CompanyRegisterController::store');
+$routes->post('registar', 'Auth\\RegisterController::store');
 
 
 $routes->get('invoices/download/(:num)', 'InvoicesController::download/$1');

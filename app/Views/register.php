@@ -39,6 +39,30 @@
                                    value="<?= old('company_name') ?>" required>
                         </div>
 
+                        <div class="mb-3">
+                            <label class="form-label">Nif da Empresa</label>
+                            <input type="text" name="company_nif" class="form-control"
+                                   value="<?= old('company_nif') ?>" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Telefone da Empresa</label>
+                            <input type="text" name="company_phone" class="form-control"
+                                   value="<?= old('company_phone') ?>" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Endereço da Empresa</label>
+                            <input type="text" name="company_address" class="form-control"
+                                   value="<?= old('company_address') ?>" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Logotipo da Empresa</label>
+                            <input type="file" name="logo" class="form-control" accept="image/*">
+                            <small class="text-muted">PNG, JPG ou SVG (máx. 2MB)</small>
+                        </div>
+
                         <hr>
 
                         <h6 class="text-muted mb-2">Administrador da Empresa</h6>

@@ -8,76 +8,70 @@
         body {
             font-family: DejaVu Sans, Arial, sans-serif;
             font-size: 12px;
-            color: #333;
+            color: #000;
         }
 
         .container {
             width: 100%;
-            margin: auto;
         }
 
-        .header, .footer {
+        .row {
             width: 100%;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
-        .company, .invoice-info {
+        .left, .right {
             width: 48%;
             display: inline-block;
             vertical-align: top;
-        }
-
-        .invoice-info {
-            text-align: right;
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 22px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-
-        table th, table td {
-            border: 1px solid #ccc;
-            padding: 8px;
-        }
-
-        table th {
-            background: #f5f5f5;
-        }
-
-        .totals {
-            width: 40%;
-            float: right;
-            margin-top: 20px;
-        }
-
-        .totals td {
-            border: none;
-            padding: 6px;
         }
 
         .right {
             text-align: right;
         }
 
-        .status {
-            padding: 5px 10px;
-            display: inline-block;
-            font-size: 11px;
-            background: #d1e7dd;
-            color: #0f5132;
+        h1 {
+            font-size: 22px;
+            margin: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: 6px;
+        }
+
+        th {
+            background: #eee;
+            text-align: left;
+        }
+
+        .totals {
+            width: 40%;
+            float: right;
+            margin-top: 15px;
+        }
+
+        .totals td {
+            border: none;
+            padding: 4px;
         }
 
         .footer {
-            font-size: 11px;
-            text-align: center;
+            font-size: 10px;
             margin-top: 40px;
+            text-align: center;
+        }
+
+        .status {
+            font-size: 11px;
+            padding: 3px 6px;
+            border: 1px solid #000;
         }
     </style>
 </head>
@@ -86,48 +80,65 @@
 <div class="container">
 
     <!-- CABEÇALHO -->
-    <div class="header">
-        <div class="company">
-            <h1>FATURA</h1>
+    <div class="row">
+        <div class="left">
+            <h1>FATURA (FT)</h1>
             <p>
-                <strong><?= esc(auth()->user()->company_name ?? 'Empresa') ?></strong><br>
-                NIF: <?= esc(auth()->user()->company_nif ?? '---') ?><br>
-                <?= esc(auth()->user()->company_address ?? '') ?>
+                <strong><?= esc($invoice['company_name']) ?></strong><br>
+                NIF: <?= esc($invoice['company_nif']) ?><br>
+                <?= esc($invoice['company_address']) ?><br>
+                <?= esc($invoice['company_email'] ?? '') ?>
             </p>
         </div>
 
-        <div class="invoice-info">
+        <div class="right">
             <p>
-                <strong>Nº Factura:</strong> <?= esc($invoice['invoice_number']) ?><br>
-                <strong>Data:</strong> <?= date('d/m/Y', strtotime($invoice['created_at'])) ?><br>
-                <span class="status">PROCESSADA</span>
+                <strong>Nº:</strong> <?= esc($invoice['invoice_number']) ?><br>
+                <strong>Data:</strong> <?= date('d/m/Y', strtotime($invoice['issued_at'])) ?><br>
+                <span class="status"><?= strtoupper($invoice['status']) ?></span>
             </p>
         </div>
     </div>
 
     <!-- CLIENTE -->
-    <p>
+    <div class="row">
         <strong>Cliente:</strong><br>
-        <?= esc($invoice['customer_name']) ?>
-    </p>
+        <?= esc($invoice['customer_name']) ?><br>
+
+        <?php if (!empty($invoice['customer_nif'])): ?>
+            NIF: <?= esc($invoice['customer_nif']) ?><br>
+        <?php endif; ?>
+
+        <?php if (!empty($invoice['customer_phone'])): ?>
+            Tel: <?= esc($invoice['customer_phone']) ?><br>
+        <?php endif; ?>
+
+        <?php if (!empty($invoice['customer_email'])): ?>
+            Email: <?= esc($invoice['customer_email']) ?><br>
+        <?php endif; ?>
+
+        <?php if (!empty($invoice['customer_address'])): ?>
+            Endereço: <?= esc($invoice['customer_address']) ?>
+        <?php endif; ?>
+    </div>
 
     <!-- ITENS -->
     <table>
         <thead>
         <tr>
             <th>Descrição</th>
-            <th class="right">Qtd</th>
-            <th class="right">Preço Unit.</th>
-            <th class="right">Total</th>
+            <th>Qtd</th>
+            <th>Preço Unit. (Kz)</th>
+            <th>Total (Kz)</th>
         </tr>
         </thead>
         <tbody>
         <?php foreach ($items as $item): ?>
             <tr>
-                <td><?= esc($item['product_name'] ?? '') ?></td>
-                <td class="right"><?= $item['quantity'] ?></td>
-                <td class="right"><?= number_format($item['unit_price'], 2, ',', '.') ?></td>
-                <td class="right"><?= number_format($item['total'], 2, ',', '.') ?></td>
+                <td><?= esc($item['description']) ?></td>
+                <td><?= esc($item['quantity']) ?></td>
+                <td><?= number_format($item['unit_price'], 2, ',', '.') ?></td>
+                <td><?= number_format($item['total'], 2, ',', '.') ?></td>
             </tr>
         <?php endforeach; ?>
         </tbody>
@@ -137,25 +148,33 @@
     <table class="totals">
         <tr>
             <td>Subtotal</td>
-            <td class="right"><?= number_format($invoice['subtotal'], 2, ',', '.') ?></td>
+            <td class="right"><?= number_format($invoice['subtotal'], 2, ',', '.') ?> Kz</td>
         </tr>
+
+        <?php if (!empty($invoice['discount'])): ?>
         <tr>
             <td>Desconto</td>
-            <td class="right"><?= number_format($invoice['discount'], 2, ',', '.') ?></td>
+            <td class="right"><?= number_format($invoice['discount'], 2, ',', '.') ?> Kz</td>
         </tr>
+        <?php endif; ?>
+
+        <tr>
+            <td>IVA</td>
+            <td class="right"><?= number_format($invoice['tax'], 2, ',', '.') ?> Kz</td>
+        </tr>
+
         <tr>
             <td><strong>Total</strong></td>
-            <td class="right">
-                <strong><?= number_format($invoice['total'], 2, ',', '.') ?></strong>
-            </td>
+            <td class="right"><strong><?= number_format($invoice['total'], 2, ',', '.') ?> Kz</strong></td>
         </tr>
     </table>
 
-    <div style="clear: both;"></div>
+    <div style="clear: both"></div>
 
-    <!-- RODAPÉ -->
+    <!-- RODAPÉ LEGAL -->
     <div class="footer">
-        Documento processado por computador • Não requer assinatura
+        Documento processado por computador nos termos da lei em vigor.<br>
+        Valores expressos em Kwanzas (Kz).
     </div>
 
 </div>
