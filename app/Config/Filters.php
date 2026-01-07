@@ -37,6 +37,7 @@ class Filters extends BaseFilters
         'company'       => \App\Filters\CompanyFilter::class,
         'group'         => \CodeIgniter\Shield\Filters\GroupFilter::class,
         'auth'          => \CodeIgniter\Shield\Filters\SessionAuth::class,
+        'master'        => \App\Filters\MasterFilter::class,
     ];
 
     /**

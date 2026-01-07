@@ -1,6 +1,7 @@
 <?php
 
 use CodeIgniter\Router\RouteCollection;
+use App\Controllers\Master\DashboardController;
 
 /**
  * @var RouteCollection $routes
@@ -96,5 +97,20 @@ $routes->get('invoices/create-from-sale/(:num)', 'InvoicesController::generateFr
 $routes->get('invoices/thermal/(:num)', 'InvoicesController::printThermal/$1');
 
 
+//Rotas para o usuário Master
+$routes->group('master', ['filter' => 'group:superadmin'], function ($routes) {
+    $routes->get('dashboard', 'Master\DashboardController::index');
+
+    $routes->get('empresas', 'Master\CompanyController::index');
+    $routes->get('empresas/(:num)', 'Master\CompanyController::show/$1');
+    $routes->post('empresas/(:num)/toggle', 'Master\CompanyController::toggle/$1');
+
+    $routes->get('usuarios', 'Master\UserController::index');
+});
+
+
+$routes->get('login', 'Auth\LoginController::index');
+$routes->post('login', 'Auth\LoginController::attempt');
+$routes->get('logout', 'Auth\LoginController::logout');
 
 service('auth')->routes($routes);
