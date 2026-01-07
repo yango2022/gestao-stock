@@ -16,10 +16,28 @@ class RegisterController extends BaseController
         return view('register');
     }
 
-        public function store()
+    public function store()
     {
         $db = db_connect();
         $db->transStart();
+
+        // Validação básica
+        if (! $this->validate([
+            'company_name' => 'required|min_length[3]',
+            'email'        => 'required|valid_email',
+            'logo'         => 'permit_empty|is_image[logo]|max_size[logo,2048]'
+        ])) {
+            return redirect()->back()->withInput()->with('error', 'Dados inválidos.');
+        }
+
+         // Upload do logotipo
+        $logoName = null;
+        $logoFile = $this->request->getFile('logo');
+
+        if ($logoFile && $logoFile->isValid() && ! $logoFile->hasMoved()) {
+            $logoName = $logoFile->getRandomName();
+            $logoFile->move(FCPATH . 'uploads/companies', $logoName);
+        }
 
         // 1️⃣ Criar empresa
         $db->table('companies')->insert([
@@ -29,6 +47,7 @@ class RegisterController extends BaseController
             'nif'           => $this->request->getPost('company_nif'),
             'phone'         => $this->request->getPost('company_phone'),
             'address'       => $this->request->getPost('company_address'),
+            'logo'          => $logoName,
             'created_at'    => date('Y-m-d H:i:s'),
         ]);
 

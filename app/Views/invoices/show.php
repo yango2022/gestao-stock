@@ -79,9 +79,14 @@
 <body>
 <div class="container">
 
-    <!-- CABEÇALHO -->
+    <!-- CABEÇALHO + CLIENTE EM COLUNAS -->
     <div class="row">
+        <!-- ESQUERDA: EMPRESA -->
         <div class="left">
+            <?php if (!empty($logoBase64)): ?>
+                <img src="<?= $logoBase64 ?>" style="max-height:80px; margin-bottom:10px;">
+            <?php endif; ?>
+
             <h1>FATURA (FT)</h1>
             <p>
                 <strong><?= esc($invoice['company_name']) ?></strong><br>
@@ -91,36 +96,39 @@
             </p>
         </div>
 
+        <!-- DIREITA: CLIENTE -->
         <div class="right">
-            <p>
-                <strong>Nº:</strong> <?= esc($invoice['invoice_number']) ?><br>
-                <strong>Data:</strong> <?= date('d/m/Y', strtotime($invoice['issued_at'])) ?><br>
-                <span class="status"><?= strtoupper($invoice['status']) ?></span>
-            </p>
+
+            <div class="">
+                <p>
+                    <strong>Nº:</strong> <?= esc($invoice['invoice_number']) ?><br>
+                    <strong>Data:</strong> <?= date('d/m/Y', strtotime($invoice['issued_at'])) ?><br>
+                    <span class="status"><?= strtoupper($invoice['status']) ?></span>
+                </p>
+            </div>
+
+            <strong>Cliente:</strong><br>
+            <?= esc($invoice['customer_name']) ?><br>
+
+            <?php if (!empty($invoice['customer_nif'])): ?>
+                NIF: <?= esc($invoice['customer_nif']) ?><br>
+            <?php endif; ?>
+
+            <?php if (!empty($invoice['customer_phone'])): ?>
+                Tel: <?= esc($invoice['customer_phone']) ?><br>
+            <?php endif; ?>
+
+            <?php if (!empty($invoice['customer_email'])): ?>
+                Email: <?= esc($invoice['customer_email']) ?><br>
+            <?php endif; ?>
+
+            <?php if (!empty($invoice['customer_address'])): ?>
+                Endereço: <?= esc($invoice['customer_address']) ?>
+            <?php endif; ?>
         </div>
     </div>
 
-    <!-- CLIENTE -->
-    <div class="row">
-        <strong>Cliente:</strong><br>
-        <?= esc($invoice['customer_name']) ?><br>
 
-        <?php if (!empty($invoice['customer_nif'])): ?>
-            NIF: <?= esc($invoice['customer_nif']) ?><br>
-        <?php endif; ?>
-
-        <?php if (!empty($invoice['customer_phone'])): ?>
-            Tel: <?= esc($invoice['customer_phone']) ?><br>
-        <?php endif; ?>
-
-        <?php if (!empty($invoice['customer_email'])): ?>
-            Email: <?= esc($invoice['customer_email']) ?><br>
-        <?php endif; ?>
-
-        <?php if (!empty($invoice['customer_address'])): ?>
-            Endereço: <?= esc($invoice['customer_address']) ?>
-        <?php endif; ?>
-    </div>
 
     <!-- ITENS -->
     <table>

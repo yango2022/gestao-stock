@@ -16,6 +16,7 @@ class CashFlowModel extends Model
         'amount',
         'reference_id',
         'note',
+        'company_id',
         'created_at'
     ];
 

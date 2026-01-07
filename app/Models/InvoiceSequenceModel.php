@@ -47,6 +47,6 @@ class InvoiceSequenceModel extends Model
             ]);
         }
 
-        return sprintf('FT-%s-%05d', $year, $number);
+        return sprintf('FT/%s/%05d', $year, $number);
     }
 }

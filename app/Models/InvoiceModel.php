@@ -32,6 +32,8 @@ class InvoiceModel extends Model
         'company_nif',
         'company_address',
         'company_email',
+        'company_phone',
+        'company_logo',
     ];
 
     protected $useTimestamps = true;

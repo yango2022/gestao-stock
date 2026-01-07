@@ -85,8 +85,8 @@
                             <option value="venda">Venda</option>
                             <option value="compra">Compra</option>
                             <option value="ajuste">Ajuste</option>
-                            <option value="despesas">Despesas</option>
-                            <option value="outros">Outros</option>
+                            <option value="despesa">Despesas</option>
+                            <option value="outro">Outros</option>
                         </select>
                     </div>
 
@@ -136,8 +136,8 @@
                             <option value="venda">Venda</option>
                             <option value="compra">Compra</option>
                             <option value="ajuste">Ajuste</option>
-                            <option value="despesas">Despesas</option>
-                            <option value="outros">Outros</option>
+                            <option value="despesa">Despesas</option>
+                            <option value="outro">Outros</option>
                         </select>
                     </div>
 

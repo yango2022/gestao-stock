@@ -11,6 +11,7 @@ class StockOutModel extends Model
 
     protected $allowedFields = [
         'product_id',
+        'company_id',
         'quantity',
         'user_id',
     ];

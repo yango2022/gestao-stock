@@ -90,9 +90,11 @@ $routes->group('invoices', ['filter' => 'session'], function ($routes) {
 $routes->get('register', 'Auth\\RegisterController::index');
 $routes->post('registar', 'Auth\\RegisterController::store');
 
-
+$routes->get('invoices/factura/(:num)', 'InvoicesController::index/$1');
 $routes->get('invoices/download/(:num)', 'InvoicesController::download/$1');
 $routes->get('invoices/create-from-sale/(:num)', 'InvoicesController::generateFromSale/$1');
+$routes->get('invoices/thermal/(:num)', 'InvoicesController::printThermal/$1');
+
 
 
 service('auth')->routes($routes);

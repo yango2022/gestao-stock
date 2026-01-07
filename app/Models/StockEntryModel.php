@@ -12,6 +12,7 @@ class StockEntryModel extends Model
     protected $allowedFields = [
         'product_id',
         'supplier_id',
+        'company_id',
         'quantity',
         'unit_cost',
         'total_cost',

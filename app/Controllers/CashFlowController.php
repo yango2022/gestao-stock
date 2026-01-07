@@ -6,54 +6,128 @@ use App\Models\CashFlowModel;
 
 class CashFlowController extends BaseController
 {
-    public function index()
+    protected CashFlowModel $model;
+    protected int $companyId;
+
+    public function __construct()
     {
-        $model = new CashFlowModel();
+        $this->model = new CashFlowModel();
+
         $user = auth()->user();
 
-        $data['items']  = $model->orderBy('created_at', 'DESC')->paginate(15);
-        $data['pager']  = $model->pager;
-        $data['user']   = $user;
+        if (! $user || empty($user->company_id)) {
+            redirect()->to('/logout')->send();
+            exit;
+        }
+
+        $this->companyId = $user->company_id;
+    }
+
+    // =====================================================
+    // 📄 LISTAGEM
+    // =====================================================
+    public function index()
+    {
+        $data = [
+            'items' => $this->model
+                ->where('company_id', $this->companyId)
+                ->orderBy('created_at', 'DESC')
+                ->paginate(15),
+
+            'pager' => $this->model->pager,
+            'user'  => auth()->user(),
+        ];
 
         return view('cashflow/index', $data);
     }
 
+    // =====================================================
+    // ➕ REGISTAR MOVIMENTO
+    // =====================================================
     public function store()
     {
-        $model = new CashFlowModel();
-
         $data = $this->request->getPost();
-        $data['user_id'] = auth()->id();
 
-        $model->insert($data);
+        $data['user_id']    = auth()->id();
+        $data['company_id'] = $this->companyId;
 
-        return redirect()->to('/fluxo-caixa')->with('success', 'Movimento registado com sucesso!');
+        $this->model->insert($data);
+
+        return redirect()
+            ->to('/fluxo-caixa')
+            ->with('success', 'Movimento registado com sucesso!');
     }
 
+    // =====================================================
+    // ✏️ EDITAR
+    // =====================================================
     public function edit($id)
     {
-        $model = new CashFlowModel();
+        $item = $this->model
+            ->where('id', $id)
+            ->where('company_id', $this->companyId)
+            ->first();
 
-        $data['item'] = $model->find($id);
+        if (! $item) {
+            return redirect()
+                ->to('/fluxo-caixa')
+                ->with('error', 'Movimento não encontrado.');
+        }
 
-        return view('cashflow/edit', $data);
+        return view('cashflow/edit', [
+            'item' => $item,
+            'user' => auth()->user(),
+        ]);
     }
 
+    // =====================================================
+    // 🔄 ATUALIZAR
+    // =====================================================
     public function update($id)
     {
-        $model = new CashFlowModel();
+        $item = $this->model
+            ->where('id', $id)
+            ->where('company_id', $this->companyId)
+            ->first();
+
+        if (! $item) {
+            return redirect()
+                ->to('/fluxo-caixa')
+                ->with('error', 'Movimento inválido.');
+        }
 
         $data = $this->request->getPost();
-        $model->update($id, $data);
 
-        return redirect()->to('/fluxo-caixa')->with('success', 'Movimento atualizado!');
+        // Proteção: nunca permitir alterar empresa ou utilizador
+        unset($data['company_id'], $data['user_id']);
+
+        $this->model->update($id, $data);
+
+        return redirect()
+            ->to('/fluxo-caixa')
+            ->with('success', 'Movimento atualizado com sucesso!');
     }
 
+    // =====================================================
+    // 🗑️ APAGAR
+    // =====================================================
     public function delete($id)
     {
-        $model = new CashFlowModel();
-        $model->delete($id);
+        $item = $this->model
+            ->where('id', $id)
+            ->where('company_id', $this->companyId)
+            ->first();
 
-        return redirect()->to('/fluxo-caixa')->with('success', 'Movimento apagado!');
+        if (! $item) {
+            return redirect()
+                ->to('/fluxo-caixa')
+                ->with('error', 'Movimento inválido.');
+        }
+
+        $this->model->delete($id);
+
+        return redirect()
+            ->to('/fluxo-caixa')
+            ->with('success', 'Movimento apagado com sucesso!');
     }
 }

@@ -39,10 +39,15 @@
                             class="btn btn-sm btn-primary">
                             Gerar Fatura
                         </a>
-                        <a href="<?= site_url('invoices/download/' . $s['id']) ?>"
+                        <a href="<?= site_url('invoices/factura/' . $s['id']) ?>"
                             target="_blank"
                             class="btn btn-sm btn-danger">
                             <i class="bi bi-file-earmark-pdf"></i>Baixar PDF
+                        </a>
+                        <a href="<?= site_url('invoices/thermal/' . $s['id']) ?>"
+                            target="_blank"
+                            class="btn btn-sm btn-dark">
+                            <i class="bi bi-print"></i>Imprimir Térmica
                         </a>
                     </td>
                     <td><?= $s['created_at'] ?></td>

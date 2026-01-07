@@ -37,135 +37,187 @@ class InvoicesController extends BaseController
     }
 
     //LISTAR FATURAS DA EMPRESA
-    public function index()
+    public function index(int $saleId)
     {
-        $data['invoices'] = $this->invoice
-            ->byCompany($this->companyId)
-            ->orderBy('id', 'DESC')
-            ->findAll();
-
-        return view('invoices/index', $data);
-    }
-
-    //GERAR FATURA A PARTIR DE UMA VENDA
-    public function generateFromSale(int $saleId)
-    {
-        //Venda da empresa
         $sale = $this->sales
             ->where('id', $saleId)
             ->where('company_id', $this->companyId)
             ->first();
 
-        if (!$sale) {
-            return redirect()->back()->with('error', 'Venda não encontrada.');
-        }
+        return view('invoices/show', $sale);
+    }
 
-        //Evitar duplicação
+    //GERAR FATURA A PARTIR DE UMA VENDA
+    public function generateFromSale(int $saleId)
+    {
+
+            // Venda da empresa
+            $sale = $this->sales
+                ->where('id', $saleId)
+                ->where('company_id', $this->companyId)
+                ->first();
+
+            if (!$sale) {
+                return redirect()->back()->with('error', 'Venda não encontrada.');
+            }
+
+            // Evitar duplicação
+            $invoice = $this->invoice
+                ->where('sale_id', $saleId)
+                ->where('company_id', $this->companyId)
+                ->first();
+
+            if ($invoice && !empty($invoice['pdf_path'])) {
+                return redirect()->to(site_url('invoices/download/' . $invoice['id']));
+            }
+
+            // Número da fatura
+            $invoiceNumber = $this->sequence->nextNumber($this->companyId);
+
+            $company = $this->companies
+                ->where('id', $this->companyId)
+                ->first();
+
+            if (!$company) {
+                return redirect()->back()->with('error', 'Empresa não encontrada.');
+            }
+
+            // Criar fatura
+            $invoiceId = $this->invoice->insert([
+                'company_id'        => $this->companyId,
+                'sale_id'           => $sale['id'],
+                'invoice_number'    => $invoiceNumber,
+                'invoice_type'      => 'FT',
+
+                // Empresa (snapshot)
+                'company_name'      => $company['name'],
+                'company_nif'       => $company['nif'],
+                'company_address'   => $company['address'],
+                'company_email'     => $company['email'] ?? null,
+                'company_logo'      => $company['logo'] ?? null,
+
+                // Cliente
+                'customer_name'     => $sale['customer_name'],
+                'customer_nif'      => $sale['customer_nif'],
+                'customer_phone'    => $sale['customer_phone'],
+                'customer_email'    => $sale['customer_email'],
+                'customer_address'  => $sale['customer_address'],
+
+                // Valores
+                'subtotal'          => $sale['subtotal'],
+                'discount'          => $sale['discount'] ?? 0,
+                'tax'               => 0,
+                'total'             => $sale['total'],
+
+                'status'            => 'emitida',
+                'issued_at'         => date('Y-m-d H:i:s'),
+            ]);
+
+            // Itens da fatura
+            $items = $this->saleItems
+                ->where('sale_id', $sale['id'])
+                ->findAll();
+
+            foreach ($items as $item) {
+                $this->invoiceItems->insert([
+                    'invoice_id' => $invoiceId,
+                    'description'=> $item['product_name'] ?? 'Produto',
+                    'quantity'   => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                    'total'      => $item['total'],
+                ]);
+            }
+
+            //BUSCAR FATURA COMPLETA
+            $invoice = $this->invoice->find($invoiceId);
+
+            //LOGO EM BASE64 (AQUI É O PONTO CRÍTICO)
+            $logoBase64 = null;
+
+            if (!empty($invoice['company_logo'])) {
+                $logoPath = FCPATH . 'uploads/companies/' . $invoice['company_logo'];
+
+                if (file_exists($logoPath)) {
+                    $type = pathinfo($logoPath, PATHINFO_EXTENSION);
+                    $data = file_get_contents($logoPath);
+                    $logoBase64 = 'data:image/' . $type . ';base64,' . base64_encode($data);
+                }
+            }
+
+            //GERAR HTML
+            $html = view('invoices/show', [
+                'invoice'    => $invoice,
+                'items'      => $this->invoiceItems->where('invoice_id', $invoiceId)->findAll(),
+                'logoBase64' => $logoBase64,
+            ]);
+
+            // GERAR PDF
+            $options = new Options();
+            $options->set('defaultFont', 'DejaVu Sans');
+            $options->set('isRemoteEnabled', true);
+            $options->set('isHtml5ParserEnabled', true);
+
+            $dompdf = new Dompdf($options);
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+
+            // Diretório
+            $dir = WRITEPATH . 'uploads/invoices/' . $this->companyId;
+            if (!is_dir($dir)) {
+                mkdir($dir, 0777, true);
+            }
+
+            // Nome do ficheiro
+            $fileName = $invoiceNumber . '.pdf';
+            $filePath = $dir . '/' . $fileName;
+
+            file_put_contents($filePath, $dompdf->output());
+
+            // Guardar caminho no banco
+            $pdfPath = 'uploads/invoices/' . $this->companyId . '/' . $fileName;
+
+            $this->invoice
+            ->where('id', $invoiceId)
+                ->set(['pdf_path' => $pdfPath])
+                ->update();
+
+            return redirect()->to(site_url('invoices/download/' . $invoiceId))
+                ->with('success', 'Fatura gerada com sucesso.');
+    }
+
+    public function printThermal($id)
+    {
         $invoice = $this->invoice
-            ->where('sale_id', $saleId)
+            ->where('id', $id)
             ->where('company_id', $this->companyId)
             ->first();
 
-        if ($invoice && !empty($invoice['pdf_path'])) {
-            return redirect()->to(site_url('invoices/download/' . $invoice['id']));
+        if (! $invoice) {
+            return redirect()->back()->with('error', 'Fatura não encontrada.');
         }
 
-        //Número da fatura
-        $invoiceNumber = $this->sequence->nextNumber($this->companyId);
-
-        $company = $this->companies
-            ->where('id', $this->companyId)
-            ->first();
-
-        if (! $company) {
-            return redirect()->back()->with('error', 'Empresa não encontrada.');
-        }
-
-        //Criar fatura
-        $invoiceId = $this->invoice->insert([
-            'company_id'       => $this->companyId,
-            'sale_id'          => $sale['id'],
-            'invoice_number'   => $invoiceNumber,
-            'invoice_type'     => 'FT',
-
-            // ✅ DADOS DA EMPRESA (FIXOS NA FATURA)
-            'company_name'     => $company['name'],
-            'company_nif'      => $company['nif'],
-            'company_address'  => $company['address'],
-            'company_email'    => $company['email'] ?? null,
-
-            // CLIENTE
-            'customer_name'    => $sale['customer_name'],
-            'customer_nif'    => $sale['customer_nif'],
-            'customer_phone'  => $sale['customer_phone'],
-            'customer_email'  => $sale['customer_email'],
-            'customer_address'  => $sale['customer_address'],
-
-            // VALORES
-            'subtotal'         => $sale['subtotal'],
-            'discount'         => $sale['discount'] ?? 0,
-            'tax'              => 0,
-            'total'            => $sale['total'],
-
-            'status'           => 'emitida',
-            'issued_at'        => date('Y-m-d H:i:s'),
-        ]);
-
-
-        //Itens
-        $items = $this->saleItems
-            ->where('sale_id', $sale['id'])
+        $items = $this->invoiceItems
+            ->where('invoice_id', $id)
             ->findAll();
 
-        foreach ($items as $item) {
-            $this->invoiceItems->insert([
-                'invoice_id' => $invoiceId,
-                'description'=> $item['product_name'] ?? 'Produto',
-                'quantity'   => $item['quantity'],
-                'unit_price' => $item['unit_price'],
-                'total'      => $item['total'],
-            ]);
+        // Logo em Base64
+        $logoBase64 = null;
+        if (!empty($invoice['company_logo'])) {
+            $path = FCPATH . 'uploads/companies/' . $invoice['company_logo'];
+            if (file_exists($path)) {
+                $type = pathinfo($path, PATHINFO_EXTENSION);
+                $logoBase64 = 'data:image/'.$type.';base64,'.base64_encode(file_get_contents($path));
+            }
         }
 
-        //GERAR PDF
-        $html = view('invoices/show', [
-            'invoice' => $this->invoice->find($invoiceId),
-            'items'   => $this->invoiceItems->where('invoice_id', $invoiceId)->findAll(),
+        return view('invoices/thermal', [
+            'invoice'    => $invoice,
+            'items'      => $items,
+            'logoBase64' => $logoBase64,
         ]);
-
-        $options = new Options();
-        $options->set('defaultFont', 'DejaVu Sans');
-
-        $dompdf = new Dompdf($options);
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
-
-        //Diretório
-        $dir = WRITEPATH . 'uploads/invoices/' . $this->companyId;
-        if (!is_dir($dir)) {
-            mkdir($dir, 0777, true);
-        }
-
-        //Nome do ficheiro
-        $fileName = $invoiceNumber . '.pdf';
-        $filePath = $dir . '/' . $fileName;
-
-        file_put_contents($filePath, $dompdf->output());
-
-        //Guardar caminho no banco
-        $pdfPath = 'uploads/invoices/' . $this->companyId . '/' . $fileName;
-
-        $this->invoice->where('id', $invoiceId)
-              ->set([
-                  'pdf_path' => $pdfPath
-              ])
-              ->update();
-
-
-        return redirect()->to(site_url('invoices/download/' . $invoiceId))
-            ->with('success', 'Fatura gerada com sucesso.');
     }
+
 
     public function download(int $id)
     {
