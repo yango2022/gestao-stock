@@ -2,37 +2,32 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <title>Fatura <?= esc($invoice['invoice_number']) ?></title>
 
     <style>
-        @page {
-            size: 80mm auto; /* usar 58mm se necessário */
-            margin: 5mm;
-        }
-
         body {
-            font-family: Arial, sans-serif;
+            font-family: Courier, monospace;
             font-size: 11px;
             margin: 0;
             padding: 0;
+        }
+
+        .container {
+            width: 226px; /* 80mm */
+            margin: auto;
         }
 
         .center {
             text-align: center;
         }
 
-        .line {
+        .right {
+            text-align: right;
+        }
+
+        hr {
+            border: none;
             border-top: 1px dashed #000;
             margin: 6px 0;
-        }
-
-        .row {
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .small {
-            font-size: 10px;
         }
 
         table {
@@ -40,124 +35,131 @@
             border-collapse: collapse;
         }
 
-        th, td {
-            padding: 3px 0;
-            font-size: 11px;
+        td {
+            padding: 2px 0;
+            vertical-align: top;
         }
 
-        th {
-            border-bottom: 1px dashed #000;
-            text-align: left;
+        .small {
+            font-size: 10px;
         }
 
-        .totals td {
+        .bold {
             font-weight: bold;
-        }
-
-        .print-btn {
-            margin: 10px;
-            padding: 6px 10px;
-            font-size: 12px;
-        }
-
-        @media print {
-            .no-print {
-                display: none;
-            }
         }
     </style>
 </head>
 
 <body>
+<div class="container">
 
-<div class="center">
-
-    <?php if (!empty($logoBase64)): ?>
-        <img src="<?= $logoBase64 ?>" style="max-width:120px; margin-bottom:5px;">
-    <?php endif; ?>
-
-    <strong><?= esc($invoice['company_name']) ?></strong><br>
-    NIF: <?= esc($invoice['company_nif']) ?><br>
-    <?= esc($invoice['company_address']) ?><br>
-    <?= esc($invoice['company_email'] ?? '') ?>
-
-</div>
-
-<div class="line"></div>
-
-<div class="small">
-    <div class="row">
-        <span>Fatura:</span>
-        <span><?= esc($invoice['invoice_number']) ?></span>
+    <!-- EMPRESA -->
+    <div class="center bold">
+        <?= esc($invoice['company_name']) ?>
     </div>
-    <div class="row">
-        <span>Data:</span>
-        <span><?= date('d/m/Y H:i') ?></span>
+
+    <div class="center small">
+        NIF: <?= esc($invoice['company_nif']) ?><br>
+        <?= esc($invoice['company_address']) ?><br>
+        <?= esc($invoice['company_email'] ?? '') ?>
     </div>
-</div>
 
-<div class="line"></div>
+    <hr>
 
-<strong>Cliente</strong><br>
-<?= esc($invoice['customer_name']) ?><br>
+    <!-- FATURA -->
+    <div class="small">
+        <strong>FATURA (FT)</strong><br>
+        Nº: <?= esc($invoice['invoice_number']) ?><br>
+        Data: <?= date('d/m/Y H:i', strtotime($invoice['issued_at'])) ?><br>
+        Estado: <?= strtoupper($invoice['status']) ?>
+    </div>
 
-<?php if ($invoice['customer_nif']): ?>
-NIF: <?= esc($invoice['customer_nif']) ?><br>
-<?php endif; ?>
+    <hr>
 
-<div class="line"></div>
+    <!-- CLIENTE -->
+    <div class="small">
+        <strong>Cliente:</strong><br>
+        <?= esc($invoice['customer_name']) ?><br>
 
-<table>
-    <thead>
+        <?php if (!empty($invoice['customer_nif'])): ?>
+            NIF: <?= esc($invoice['customer_nif']) ?><br>
+        <?php endif; ?>
+    </div>
+
+    <hr>
+
+    <!-- ITENS -->
+    <table>
+        <?php foreach ($items as $item): ?>
+            <tr>
+                <td colspan="2" class="bold">
+                    <?= esc($item['description']) ?>
+                </td>
+            </tr>
+            <tr class="small">
+                <td>
+                    <?= $item['quantity'] ?> x <?= number_format($item['unit_price'], 2, ',', '.') ?>
+                </td>
+                <td class="right">
+                    <?= number_format($item['total'], 2, ',', '.') ?>
+                </td>
+            </tr>
+
+            <?php if (!empty($item['iva_rate']) && $item['iva_rate'] > 0): ?>
+                <tr class="small">
+                    <td>
+                        IVA (<?= $item['iva_rate'] ?>%)
+                    </td>
+                    <td class="right">
+                        <?= number_format($item['iva_total'], 2, ',', '.') ?>
+                    </td>
+                </tr>
+            <?php else: ?>
+                <tr class="small">
+                    <td colspan="2">
+                        IVA: Isento
+                    </td>
+                </tr>
+            <?php endif; ?>
+        <?php endforeach; ?>
+    </table>
+
+    <hr>
+
+    <!-- TOTAIS -->
+    <table class="small">
         <tr>
-            <th>Item</th>
-            <th style="text-align:center">Qtd</th>
-            <th style="text-align:right">Total</th>
+            <td>Subtotal</td>
+            <td class="right"><?= number_format($invoice['subtotal'], 2, ',', '.') ?></td>
         </tr>
-    </thead>
-    <tbody>
-    <?php foreach ($items as $item): ?>
+
+        <?php if (!empty($invoice['discount']) && $invoice['discount'] > 0): ?>
+            <tr>
+                <td>Desconto</td>
+                <td class="right"><?= number_format($invoice['discount'], 2, ',', '.') ?></td>
+            </tr>
+        <?php endif; ?>
+
         <tr>
-            <td><?= esc($item['description']) ?></td>
-            <td style="text-align:center"><?= $item['quantity'] ?></td>
-            <td style="text-align:right"><?= number_format($item['total'], 2, ',', '.') ?></td>
+            <td>IVA</td>
+            <td class="right"><?= number_format($invoice['tax'], 2, ',', '.') ?></td>
         </tr>
-    <?php endforeach; ?>
-    </tbody>
-</table>
 
-<div class="line"></div>
+        <tr class="bold">
+            <td>TOTAL</td>
+            <td class="right"><?= number_format($invoice['total'], 2, ',', '.') ?> Kz</td>
+        </tr>
+    </table>
 
-<table class="totals">
-    <tr>
-        <td>Subtotal</td>
-        <td style="text-align:right"><?= number_format($invoice['subtotal'], 2, ',', '.') ?> Kz</td>
-    </tr>
+    <hr>
 
-    <?php if ($invoice['discount'] > 0): ?>
-    <tr>
-        <td>Desconto</td>
-        <td style="text-align:right"><?= number_format($invoice['discount'], 2, ',', '.') ?> Kz</td>
-    </tr>
-    <?php endif; ?>
+    <!-- RODAPÉ -->
+    <div class="center small">
+        Documento processado por computador<br>
+        Valores expressos em Kz<br><br>
+        Obrigado pela preferência
+    </div>
 
-    <tr>
-        <td>Total</td>
-        <td style="text-align:right"><?= number_format($invoice['total'], 2, ',', '.') ?> Kz</td>
-    </tr>
-</table>
-
-<div class="line"></div>
-
-<div class="center small">
-    Obrigado pela preferência!<br>
-    Documento processado por computador
 </div>
-
-<!-- BOTÃO -->
-<div class="center no-print">
-    <button class="print-btn" onclick="window.print()">🖨️ Imprimir</button>
-</div>
-
 </body>
 </html>

@@ -133,29 +133,44 @@
     <!-- ITENS -->
     <table>
         <thead>
-        <tr>
-            <th>Descrição</th>
-            <th>Qtd</th>
-            <th>Preço Unit. (Kz)</th>
-            <th>Total (Kz)</th>
-        </tr>
+            <tr>
+                <th>Descrição</th>
+                <th>Qtd</th>
+                <th>Preço Unit. (Kz)</th>
+                <th>IVA %</th>
+                <th>IVA (Kz)</th>
+                <th>Total (Kz)</th>
+            </tr>
         </thead>
         <tbody>
-        <?php foreach ($items as $item): ?>
-            <tr>
-                <td><?= esc($item['description']) ?></td>
-                <td><?= esc($item['quantity']) ?></td>
-                <td><?= number_format($item['unit_price'], 2, ',', '.') ?></td>
-                <td><?= number_format($item['total'], 2, ',', '.') ?></td>
-            </tr>
-        <?php endforeach; ?>
+            <?php foreach ($items as $item): ?>
+                <tr>
+                    <td><?= esc($item['description']) ?></td>
+                    <td><?= esc($item['quantity']) ?></td>
+                    <td><?= number_format($item['unit_price'], 2, ',', '.') ?></td>
+
+                    <td>
+                        <?= $item['iva_rate'] > 0 
+                            ? number_format($item['iva_rate'], 2, ',', '.') . '%' 
+                            : 'Isento' ?>
+                    </td>
+
+                    <td>
+                        <?= number_format($item['iva_rate'], 2, ',', '.') ?>
+                    </td>
+
+                    <td>
+                        <?= number_format($item['total'], 2, ',', '.') ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
         </tbody>
     </table>
 
     <!-- TOTAIS -->
     <table class="totals">
         <tr>
-            <td>Subtotal</td>
+            <td>Subtotal (S/IVA)</td>
             <td class="right"><?= number_format($invoice['subtotal'], 2, ',', '.') ?> Kz</td>
         </tr>
 
@@ -167,13 +182,15 @@
         <?php endif; ?>
 
         <tr>
-            <td>IVA</td>
+            <td>Total + IVA</td>
             <td class="right"><?= number_format($invoice['tax'], 2, ',', '.') ?> Kz</td>
         </tr>
 
         <tr>
-            <td><strong>Total</strong></td>
-            <td class="right"><strong><?= number_format($invoice['total'], 2, ',', '.') ?> Kz</strong></td>
+            <td><strong>Total a Pagar</strong></td>
+            <td class="right">
+                <strong><?= number_format($invoice['total'], 2, ',', '.') ?> Kz</strong>
+            </td>
         </tr>
     </table>
 
@@ -181,9 +198,15 @@
 
     <!-- RODAPÉ LEGAL -->
     <div class="footer">
-        Documento processado por computador nos termos da lei em vigor.<br>
+        Documento processado por computador nos termos da legislação fiscal angolana.<br>
+
+        <?php if (!empty($invoice['has_iva_exempt'])): ?>
+            Contém produtos isentos de IVA nos termos da lei.<br>
+        <?php endif; ?>
+
         Valores expressos em Kwanzas (Kz).
     </div>
+
 
 </div>
 </body>

@@ -119,12 +119,21 @@ class InvoicesController extends BaseController
                 ->findAll();
 
             foreach ($items as $item) {
+
+                $ivaRate = $item['iva_rate'] ?? 0;
+                $ivaAmount = $item['iva_amount'] ?? 0;
+
                 $this->invoiceItems->insert([
                     'invoice_id' => $invoiceId,
                     'description'=> $item['product_name'] ?? 'Produto',
                     'quantity'   => $item['quantity'],
                     'unit_price' => $item['unit_price'],
                     'total'      => $item['total'],
+
+                    // 🔥 SNAPSHOT FISCAL
+                    'iva_rate'   => $ivaRate,
+                    'iva_type'   => $item['iva_type'] ?? 'normal',
+                    'iva_amount' => $ivaAmount,
                 ]);
             }
 
@@ -186,7 +195,183 @@ class InvoicesController extends BaseController
                 ->with('success', 'Fatura gerada com sucesso.');
     }
 
-    public function printThermal($id)
+
+    public function printThermal(int $saleId)
+    {
+        // =========================
+        // BUSCAR VENDA
+        // =========================
+        $sale = $this->sales
+            ->where('id', $saleId)
+            ->where('company_id', $this->companyId)
+            ->first();
+
+        if (!$sale) {
+            return redirect()->back()->with('error', 'Venda não encontrada.');
+        }
+
+        // =========================
+        // EVITAR DUPLICAÇÃO
+        // =========================
+        $invoice = $this->invoice
+            ->where('sale_id', $saleId)
+            ->where('company_id', $this->companyId)
+            ->first();
+
+        if ($invoice && !empty($invoice['pdf_path'])) {
+            return redirect()->to(site_url('invoices/download/' . $invoice['id']));
+        }
+
+        // =========================
+        // DADOS BASE
+        // =========================
+        $invoiceNumber = $this->sequence->nextNumber($this->companyId);
+
+        $company = $this->companies
+            ->where('id', $this->companyId)
+            ->first();
+
+        if (!$company) {
+            return redirect()->back()->with('error', 'Empresa não encontrada.');
+        }
+
+        // =========================
+        // CRIAR FATURA
+        // =========================
+        $invoiceId = $this->invoice->insert([
+            'company_id'        => $this->companyId,
+            'sale_id'           => $sale['id'],
+            'invoice_number'    => $invoiceNumber,
+            'invoice_type'      => 'FT',
+
+            // Empresa (snapshot)
+            'company_name'      => $company['name'],
+            'company_nif'       => $company['nif'],
+            'company_address'   => $company['address'],
+            'company_email'     => $company['email'] ?? null,
+            'company_logo'      => $company['logo'] ?? null,
+
+            // Cliente
+            'customer_name'     => $sale['customer_name'],
+            'customer_nif'      => $sale['customer_nif'],
+            'customer_phone'    => $sale['customer_phone'],
+            'customer_email'    => $sale['customer_email'],
+            'customer_address'  => $sale['customer_address'],
+
+            // Valores
+            'subtotal'          => $sale['subtotal'],
+            'discount'          => $sale['discount'] ?? 0,
+            'tax'               => $sale['iva_rate'] ?? 0,
+            'total'             => $sale['total'],
+
+            'status'            => 'emitida',
+            'issued_at'         => date('Y-m-d H:i:s'),
+        ]);
+
+        // =========================
+        // ITENS DA FATURA
+        // =========================
+        $items = $this->saleItems
+            ->where('sale_id', $sale['id'])
+            ->findAll();
+
+        foreach ($items as $item) {
+
+                $ivaRate = $item['iva_rate'] ?? 0;
+                $ivaAmount = $item['iva_amount'] ?? 0;
+
+                $this->invoiceItems->insert([
+                    'invoice_id' => $invoiceId,
+                    'description'=> $item['product_name'] ?? 'Produto',
+                    'quantity'   => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                    'total'      => $item['total'],
+
+                    // 🔥 SNAPSHOT FISCAL
+                    'iva_rate'   => $ivaRate,
+                    'iva_type'   => $item['iva_type'] ?? 'normal',
+                    'iva_amount' => $ivaAmount,
+                ]);
+            }
+
+        // =========================
+        // BUSCAR FATURA COMPLETA
+        // =========================
+        $invoice = $this->invoice->find($invoiceId);
+        $invoiceItems = $this->invoiceItems
+            ->where('invoice_id', $invoiceId)
+            ->findAll();
+
+        // =========================
+        // HTML TÉRMICO
+        // =========================
+        $html = view('invoices/thermal', [
+            'invoice' => $invoice,
+            'items'   => $invoiceItems,
+            'company' => $company
+        ]);
+
+        // =========================
+        // DOMPDF (TÉRMICA)
+        // =========================
+        $options = new \Dompdf\Options();
+        $options->set('defaultFont', 'Courier');
+        $options->set('isRemoteEnabled', false);
+
+        $dompdf = new \Dompdf\Dompdf($options);
+        $dompdf->loadHtml($html);
+
+        // 80mm largura | altura dinâmica
+        $dompdf->setPaper([0, 0, 226.77, 800], 'portrait');
+        $dompdf->render();
+
+        // =========================
+        // GUARDAR PDF
+        // =========================
+        $baseDir = WRITEPATH . 'uploads/invoices';
+
+        $dir = $baseDir
+            . DIRECTORY_SEPARATOR . $this->companyId
+            . DIRECTORY_SEPARATOR . 'FT'
+            . DIRECTORY_SEPARATOR . date('Y');
+
+        if (!is_dir($dir)) {
+            if (!mkdir($dir, 0777, true) && !is_dir($dir)) {
+                throw new \RuntimeException('Não foi possível criar o diretório da fatura.');
+            }
+        }
+
+
+        $fileName = $invoiceNumber . '-thermal.pdf';
+        $filePath = $dir . DIRECTORY_SEPARATOR . $fileName;
+
+        file_put_contents($filePath, $dompdf->output());
+
+        $pdfPath = 'uploads/invoices/'
+            . $this->companyId
+            . '/FT/'
+            . date('Y')
+            . '/' . $fileName;
+
+        $this->invoice
+            ->where('id', $invoiceId)
+            ->set(['pdf_path' => $pdfPath])
+            ->update();
+
+            dd([
+                'dir_exists' => is_dir($dir),
+                'dir' => $dir,
+                'is_writable' => is_writable($dir)
+            ]);
+
+
+        return redirect()
+            ->to(site_url('invoices/download/' . $invoiceId))
+            ->with('success', 'Fatura térmica gerada com sucesso.');
+    }
+
+
+    public function printThermal2($id)
     {
         $invoice = $this->invoice
             ->where('id', $id)
@@ -217,7 +402,6 @@ class InvoicesController extends BaseController
             'logoBase64' => $logoBase64,
         ]);
     }
-
 
     public function download(int $id)
     {

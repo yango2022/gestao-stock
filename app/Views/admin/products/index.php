@@ -67,6 +67,44 @@
                     <input type="number" step="0.01" name="unit_price" class="form-control" required>
                 </div>
 
+                <!-- IVA -->
+                <div class="col-md-6">
+                    <label class="form-label">IVA</label>
+
+                    <select name="iva_type" id="iva_type" class="form-select" onchange="handleIvaChange()">
+                        <option value="normal" <?= old('iva_type', $product['iva_type'] ?? '') === 'normal' ? 'selected' : '' ?>>
+                            Normal (14%)
+                        </option>
+
+                        <option value="reduzido" <?= old('iva_type', $product['iva_type'] ?? '') === 'reduzido' ? 'selected' : '' ?>>
+                            Taxa Reduzida
+                        </option>
+
+                        <option value="isento" <?= old('iva_type', $product['iva_type'] ?? '') === 'isento' ? 'selected' : '' ?>>
+                            Isento de IVA
+                        </option>
+                    </select>
+                </div>
+
+                <!-- TAXA IVA -->
+                <div class="col-md-6">
+                    <label class="form-label">Taxa de IVA (%)</label>
+
+                    <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        name="iva_rate"
+                        id="iva_rate"
+                        class="form-control"
+                        value="<?= old('iva_rate', $product['iva_rate'] ?? 14) ?>"
+                    >
+                    <small class="text-muted">
+                        Use 0 para produtos isentos
+                    </small>
+                </div>
+
                 <div class="col-md-6">
                     <label>Stock Inicial</label>
                     <input type="number" name="current_stock" class="form-control" value="0">
@@ -139,6 +177,44 @@
                 <div class="col-md-6">
                     <label>Preço Venda *</label>
                     <input type="number" step="0.01" id="edit_sale_price" name="unit_price" class="form-control">
+                </div>
+
+                <!-- IVA -->
+                <div class="col-md-6">
+                    <label class="form-label">IVA</label>
+
+                    <select name="iva_type" id="iva_type" class="form-select" onchange="handleIvaChange()">
+                        <option value="normal" <?= old('iva_type', $product['iva_type'] ?? '') === 'normal' ? 'selected' : '' ?>>
+                            Normal (14%)
+                        </option>
+
+                        <option value="reduzido" <?= old('iva_type', $product['iva_type'] ?? '') === 'reduzido' ? 'selected' : '' ?>>
+                            Taxa Reduzida
+                        </option>
+
+                        <option value="isento" <?= old('iva_type', $product['iva_type'] ?? '') === 'isento' ? 'selected' : '' ?>>
+                            Isento de IVA
+                        </option>
+                    </select>
+                </div>
+
+                <!-- TAXA IVA -->
+                <div class="col-md-6">
+                    <label class="form-label">Taxa de IVA (%)</label>
+
+                    <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        name="iva_rate"
+                        id="iva_rate"
+                        class="form-control"
+                        value="<?= old('iva_rate', $product['iva_rate'] ?? 14) ?>"
+                    >
+                    <small class="text-muted">
+                        Use 0 para produtos isentos
+                    </small>
                 </div>
 
                 <div class="col-md-6">
@@ -240,6 +316,8 @@
                     document.getElementById("edit_stock").value = p.current_stock;
                     document.getElementById("edit_min_stock").value = p.min_stock;
                     document.getElementById("edit_category_id").value = p.category_id;
+                    document.getElementById("iva_rate").value = p.iva_rate;
+                    document.getElementById("iva_type").value = p.iva_type;
 
                     // definindo action do form
                     document.getElementById("editForm").action = `/produtos/update/${p.id}`;
@@ -274,5 +352,32 @@
 
 
 </script>
+
+<script>
+    function handleIvaChange() {
+        const type = document.getElementById('iva_type').value;
+        const rate = document.getElementById('iva_rate');
+
+        if (type === 'normal') {
+            rate.value = 14;
+            rate.readOnly = true;
+        }
+
+        if (type === 'reduzido') {
+            rate.readOnly = false;
+            if (rate.value == 14 || rate.value == 0) {
+                rate.value = '';
+            }
+        }
+
+        if (type === 'isento') {
+            rate.value = 0;
+            rate.readOnly = true;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', handleIvaChange);
+</script>
+
 
 <?= $this->endSection() ?>

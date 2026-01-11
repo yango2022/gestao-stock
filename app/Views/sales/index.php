@@ -76,7 +76,7 @@
                     <label>Cliente</label>
                     <select id="customer_id" class="form-select">
                         <?php foreach($customers as $c): ?>
-                        <option value="<?= $c['id'] ?>"><?= $c['name'] ?></option>
+                            <option value="<?= $c['id'] ?>"><?= $c['name'] ?></option>
                         <?php endforeach ?>
                     </select>
                 </div>
@@ -88,7 +88,7 @@
                         <option value="dinheiro">Dinheiro</option>
                         <option value="transferencia">Transferência</option>
                         <option value="multicaixa">Multicaixa</option>
-                        <option value="tpapa">TPA</option>
+                        <option value="tpaga">TPA</option>
                     </select>
                 </div>
 
@@ -108,6 +108,7 @@
                             <th>Produto</th>
                             <th>Preço</th>
                             <th>Qtd</th>
+                            <th>IVA</th>
                             <th>Total</th>
                             <th></th>
                         </tr>
@@ -133,7 +134,7 @@
     </div>
 </div>
 
-<script>
+<!--script>
     let products = <?= json_encode($products) ?>;
     let items = [];
 
@@ -142,7 +143,7 @@
             <tr>
                 <td>
                     <select class="form-select productSelect">
-                        ${products.map(p => `<option value="${p.id}" data-price="${p.unit_price}">${p.name}</option>`)}
+                        ${products.map(p => `<option value="${p.id}" data-price="${p.unit_price}" data-iva-rate="${p.iva_rate}" data-iva-type="${p.iva_type}">${p.name}</option>`)}
                     </select>
                 </td>
                 <td><input type="number" class="form-control price" value="0"></td>
@@ -228,6 +229,167 @@
             if (res.status === 'success') location.reload();
         });
     });
+</script-->
+
+<script>
+    let products = <?= json_encode($products) ?>;
+
+    document.getElementById('addItemBtn').addEventListener('click', () => {
+        let row = `
+        <tr>
+            <td>
+                <select class="form-select productSelect">
+                    <option value="">-- Produto --</option>
+                    ${products.map(p => `
+                        <option 
+                            value="${p.id}"
+                            data-price="${p.unit_price}"
+                            data-iva-rate="${p.iva_rate}"
+                            data-iva-value="${p.iva_value}"
+                        >
+                            ${p.name}
+                        </option>
+                    `).join('')}
+                </select>
+            </td>
+
+            <td>
+                <input type="number" class="form-control price" readonly>
+            </td>
+
+            <td>
+                <input type="number" class="form-control qty" value="1" min="1">
+            </td>
+
+            <td>
+                <span class="ivaLabel">—</span>
+
+                <input type="hidden" class="ivaRate">
+                <input type="hidden" class="ivaUnit">
+                <input type="hidden" class="ivaTotal">
+            </td>
+
+            <td class="itemTotal">0.00</td>
+
+            <td>
+                <button class="btn btn-danger btn-sm removeItem">X</button>
+            </td>
+        </tr>
+        `;
+        document.querySelector('#itemsTable tbody').insertAdjacentHTML('beforeend', row);
+    });
+
+    // ===============================
+    // EVENTOS DINÂMICOS
+    // ===============================
+    document.addEventListener('change', e => {
+        if (e.target.classList.contains('productSelect')) {
+            onProductChange(e.target);
+        }
+    });
+
+    document.addEventListener('input', e => {
+        if (e.target.classList.contains('qty') || e.target.id === 'discount') {
+            updateTotals();
+        }
+    });
+
+    document.addEventListener('click', e => {
+        if (e.target.classList.contains('removeItem')) {
+            e.target.closest('tr').remove();
+            updateTotals();
+        }
+    });
+
+    // ===============================
+    // PRODUTO SELECIONADO
+    // ===============================
+    function onProductChange(select) {
+        const tr = select.closest('tr');
+        const opt = select.selectedOptions[0];
+
+        if (!opt.value) return;
+
+        const price   = parseFloat(opt.dataset.price) || 0;
+        const ivaRate = parseFloat(opt.dataset.ivaRate) || 0;
+        const ivaUnit = parseFloat(opt.dataset.ivaValue) || 0;
+
+        tr.querySelector('.price').value = price.toFixed(2);
+        tr.querySelector('.ivaRate').value = ivaRate;
+        tr.querySelector('.ivaUnit').value = ivaUnit;
+
+        tr.querySelector('.ivaLabel').innerText =
+            ivaRate > 0 ? ivaRate + '%' : 'Isento';
+
+        updateTotals();
+    }
+
+    // ===============================
+    // ATUALIZAR TOTAIS
+    // ===============================
+    function updateTotals() {
+        let total = 0;
+
+        document.querySelectorAll('#itemsTable tbody tr').forEach(tr => {
+            const price = parseFloat(tr.querySelector('.price').value) || 0;
+            const qty   = parseInt(tr.querySelector('.qty').value) || 0;
+            const ivaUnit = parseFloat(tr.querySelector('.ivaUnit').value) || 0;
+
+            const itemTotal = price * qty;
+            const ivaTotal  = ivaUnit * qty;
+
+            tr.querySelector('.itemTotal').innerText = itemTotal.toFixed(2);
+            tr.querySelector('.ivaTotal').value = ivaTotal.toFixed(2);
+
+            total += itemTotal;
+        });
+
+        document.getElementById('saleTotal').innerText = total.toFixed(2);
+
+        const discount = parseFloat(document.getElementById('discount').value) || 0;
+        const final = Math.max(total - discount, 0);
+
+        document.getElementById('finalTotal').innerText = final.toFixed(2);
+    }
+
+    // ===============================
+    // SALVAR VENDA
+    // ===============================
+    document.getElementById('saveSaleBtn').addEventListener('click', () => {
+        let saleItems = [];
+
+        document.querySelectorAll('#itemsTable tbody tr').forEach(tr => {
+            saleItems.push({
+                product_id: tr.querySelector('.productSelect').value,
+                unit_price: tr.querySelector('.price').value,
+                quantity: tr.querySelector('.qty').value,
+
+                iva_rate: tr.querySelector('.ivaRate').value,
+                iva_unit: tr.querySelector('.ivaUnit').value,
+                iva_total: tr.querySelector('.ivaTotal').value,
+
+                total: tr.querySelector('.itemTotal').innerText
+            });
+        });
+
+        fetch('/vendas/store', {
+            method: 'POST',
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                customer_id: document.getElementById('customer_id').value,
+                user_id: document.getElementById('user_id').value,
+                payment_method: document.getElementById('payment_method').value,
+                discount: document.getElementById('discount').value,
+                items: saleItems
+            })
+        })
+        .then(r => r.json())
+        .then(res => {
+            Swal.fire(res.status, res.message, res.status);
+            if (res.status === 'success') location.reload();
+        });
+    });
 </script>
+
 
 <?= $this->endSection() ?>

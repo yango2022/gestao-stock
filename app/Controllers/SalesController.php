@@ -78,14 +78,29 @@ class SalesController extends BaseController
         $db->transStart();
 
         try {
-            // 🔹 Cálculos
-            $subtotal = 0;
-            foreach ($data['items'] as $item) {
-                $subtotal += (float)$item['total'];
+            // Cálculos
+            $subtotal       = 0;
+            $totalIva       = 0;
+            $totalIsento    = 0;
+
+            foreach ($data['items'] as &$item) {
+
+                $lineSubtotal = $item['unit_price'] * $item['quantity'];
+                $subtotal += $lineSubtotal;
+
+                if ($item['iva_rate'] > 0) {
+                    $iva = $lineSubtotal * ($item['iva_rate'] / 100);
+                    $item['iva_amount'] = $iva;
+                    $totalIva += $iva;
+                } else {
+                    $item['iva_amount'] = 0;
+                    $totalIsento += $lineSubtotal;
+                }
             }
 
             $discount = isset($data['discount']) ? (float)$data['discount'] : 0;
-            $total    = max(0, $subtotal - $discount);
+
+            $total = ($subtotal + $totalIva) - $discount;
 
 
             // 1️⃣ Validar cliente

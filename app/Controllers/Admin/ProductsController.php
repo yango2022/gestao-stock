@@ -53,6 +53,22 @@ class ProductsController extends BaseController
         $data = $this->request->getPost();
         $data['company_id'] = auth()->user()->company_id;
 
+        $data['iva_type'] = $data['iva_type'];
+
+        if ($data['iva_type'] === 'normal') {
+            $data['iva_rate'] = 14;
+        }
+
+        if ($data['iva_type'] === 'isento') {
+            $data['iva_rate'] = 0;
+        }
+
+        if ($data['iva_type'] === 'reduzido' && $data['iva_rate'] <= 0) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Informe a taxa reduzida de IVA.');
+        }
+
         $product = new Product($data);
 
         // Upload de imagem
